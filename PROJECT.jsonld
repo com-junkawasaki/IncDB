@@ -199,7 +199,9 @@
         "1万クエリでの読み込みベンチマーク実行：3,659,093 ops/sec",
         "100ノード、深度5でのマルチホップベンチマーク実行：610,315 hops/sec",
         "10万ベクトルでのベクトルホップベンチマーク実行：1.45 searches/sec",
-        "論文にスケーラビリティとコスト分析セクションを追加：5パターンの比較、1000億〜10兆レコード規模"
+        "論文にスケーラビリティとコスト分析セクションを追加：5パターンの比較、1000億〜10兆レコード規模",
+        "Fly.io + Tigris構成でのデプロイ完了：incdb-api.fly.dev",
+        "Fly.io上でのベンチマーク実行：Write 2,460.85 ops/sec (1K, vector_dim=128), Read 2,356.41 ops/sec (1K queries)"
       ],
       "incdb:benchmarkResults": {
         "write_100k": {
@@ -217,6 +219,64 @@
         "vector_hop_100k": {
           "throughput": "1.45 searches/sec",
           "latency": "688.59ms"
+        },
+        "flyio_write_1k": {
+          "throughput": "2,460.85 ops/sec",
+          "latency": "0.406ms",
+          "dataSize": 1000,
+          "vectorDim": 128,
+          "environment": "Fly.io (performance-4x: 4 vCPU, 32GB RAM)"
+        },
+        "flyio_read_1k": {
+          "throughput": "2,356.41 ops/sec",
+          "latency": "0.424ms",
+          "queryCount": 1000,
+          "environment": "Fly.io (performance-4x: 4 vCPU, 32GB RAM)"
+        }
+      },
+      "incdb:status": "completed"
+    },
+    {
+      "@id": "incdb:ActivityFlyIoDeployment",
+      "@type": "prov:Activity",
+      "rdfs:label": "Fly.io Deployment and Benchmark",
+      "rdfs:comment": "Fly.io + Tigris構成でのデプロイとベンチマーク実行",
+      "prov:startedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-06T10:00:00Z"
+      },
+      "prov:endedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-06T11:00:00Z"
+      },
+      "incdb:changes": [
+        "Fly.ioアプリ作成：incdb-api, incdb-web",
+        "ストレージボリューム作成：incdb_data (10GB)",
+        "EventSourcedGraph用ベンチマーク実装追加",
+        "Fly.io上でのベンチマーク実行完了",
+        "ARCHITECTURE.jsonldにスケーリングパターン比較を追加"
+      ],
+      "incdb:deliverables": [
+        "fly.api.toml",
+        "fly.web.toml",
+        "docs/FLYIO_SETUP.md",
+        ".flyignore",
+        "scripts/benchmark_flyio.py",
+        "benchmark_results_flyio.json"
+      ],
+      "incdb:benchmarkResults": {
+        "flyio_write_1k": {
+          "throughput": "2,460.85 ops/sec",
+          "latency": "0.406ms",
+          "dataSize": 1000,
+          "vectorDim": 128,
+          "environment": "Fly.io (performance-4x: 4 vCPU, 32GB RAM)"
+        },
+        "flyio_read_1k": {
+          "throughput": "2,356.41 ops/sec",
+          "latency": "0.424ms",
+          "queryCount": 1000,
+          "environment": "Fly.io (performance-4x: 4 vCPU, 32GB RAM)"
         }
       },
       "incdb:status": "completed"

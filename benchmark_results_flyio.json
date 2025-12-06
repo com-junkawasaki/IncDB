@@ -1,0 +1,46 @@
+{
+  "write": {
+    "operation": "write",
+    "dataSize": 1000,
+    "durationMs": 406.364119,
+    "throughput": 2460.8471891190766,
+    "latencyMs": 0.406364119,
+    "metadata": [
+      {
+        "key": "batch_size",
+        "value": "100"
+      },
+      {
+        "key": "vector_dim",
+        "value": "128"
+      },
+      {
+        "key": "args_per_incidence",
+        "value": "2"
+      }
+    ]
+  },
+  "read": {
+    "operation": "read",
+    "dataSize": 1000,
+    "durationMs": 0.84875,
+    "throughput": 2356.40648011782,
+    "latencyMs": 0.424375,
+    "metadata": [
+      {
+        "key": "query_count",
+        "value": "1000"
+      },
+      {
+        "key": "successful_reads",
+        "value": "2"
+      }
+    ]
+  },
+  "multi_hop": {
+    "error": "GraphQL errors: [{'message': 'Failed to iterate: Event stream error: Serialization error: invalid value: integer `1502764133`, expected variant index 0 <= i < 7', 'locations': [{'line': 3, 'column': 9}], 'path': ['benchmarkMultiHop']}]"
+  },
+  "vector_hop": {
+    "error": "GraphQL errors: [{'message': 'Failed to iterate: Event stream error: Serialization error: invalid value: integer `1502764133`, expected variant index 0 <= i < 7', 'locations': [{'line': 3, 'column': 9}], 'path': ['benchmarkVectorHop']}]"
+  }
+}

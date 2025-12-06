@@ -16,6 +16,7 @@ COPY incdb-core ./incdb-core
 COPY incdb-storage ./incdb-storage
 COPY incdb-query ./incdb-query
 COPY incdb-api ./incdb-api
+COPY incdb-cli ./incdb-cli
 
 # ビルド（API サーバーのみ）
 RUN cargo build --release --bin server -p incdb-api --no-default-features
