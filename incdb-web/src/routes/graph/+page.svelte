@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
-	import { getGraphStructure } from '$lib/graphql/client';
+	import { getGraphStructure, getIncidences } from '$lib/graphql/client';
 	import type { GraphQLGraphStructure } from '$lib/graphql/types';
 	import { convertToVisNetwork, getNodeColor } from '$lib/graph/utils';
 
@@ -78,6 +78,35 @@
 			initializeNetwork();
 		}
 	}
+
+	async function loadDemoData() {
+		loading = true;
+		error = null;
+		
+		try {
+			// すべての Incidence を取得して、Type 以外の ID を抽出
+			const incidences = await getIncidences();
+			const demoIds = incidences
+				.filter((inc) => {
+					// Type を除外（value.str が "Person", "CryptoAddress", "Transaction" でないもの）
+					const typeNames = ['Person', 'CryptoAddress', 'Transaction'];
+					return inc.value?.str && !typeNames.includes(inc.value.str);
+				})
+				.map((inc) => inc.id);
+			
+			if (demoIds.length === 0) {
+				error = 'No demo data found. Please load crypto investigation data first.';
+				loading = false;
+				return;
+			}
+			
+			selectedIds = demoIds;
+			await loadGraph();
+		} catch (e) {
+			error = e instanceof Error ? e.message : 'Failed to load demo data';
+			loading = false;
+		}
+	}
 </script>
 
 <div class="graph-page">
@@ -118,6 +147,9 @@
 		</div>
 		<button class="load-button" onclick={loadGraph} disabled={loading}>
 			{loading ? 'Loading...' : 'Load Graph'}
+		</button>
+		<button class="demo-button" onclick={loadDemoData} disabled={loading}>
+			🚀 Load Demo Data
 		</button>
 	</div>
 
@@ -217,6 +249,29 @@
 	}
 
 	.load-button:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.demo-button {
+		padding: 0.75rem 1.5rem;
+		background: #34c759;
+		color: #ffffff;
+		border: none;
+		border-radius: 8px;
+		font-size: 0.9375rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: background-color 0.2s;
+		height: fit-content;
+		margin-left: 0.5rem;
+	}
+
+	.demo-button:hover:not(:disabled) {
+		background: #28a745;
+	}
+
+	.demo-button:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
 	}

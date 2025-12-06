@@ -10,6 +10,18 @@ export interface SampleQuery {
 
 export const sampleQueries: SampleQuery[] = [
 	{
+		name: 'Load Crypto Investigation Data',
+		description: 'Create crypto crime investigation demo data (suspects, addresses, transactions)',
+		query: `mutation {
+  loadCryptoInvestigationData {
+    createdCount
+    createdIds
+  }
+}`,
+		queryType: 'graphql',
+		category: 'sample',
+	},
+	{
 		name: 'Load Sample Data',
 		description: 'Create sample Person, Company, and relationship data',
 		query: `mutation {

@@ -21,8 +21,95 @@
 		const saved = localStorage.getItem('incdb-views');
 		if (saved) {
 			views = JSON.parse(saved);
+		} else {
+			// サンプルビューを作成
+			createSampleViews();
 		}
 	});
+
+	function createSampleViews() {
+		const sampleViews: View[] = [
+			{
+				id: 'sample-1',
+				name: 'Crypto Investigation: High Risk Entities',
+				query: `query {
+  vectorSearch(
+    queryVector: [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3]
+    k: 10
+  ) {
+    incidences {
+      incidence {
+        id
+        value {
+          str
+        }
+      }
+      similarity
+    }
+  }
+}`,
+				queryType: 'graphql',
+				createdAt: new Date().toISOString(),
+			},
+			{
+				id: 'sample-2',
+				name: 'Crypto Investigation: All Suspects',
+				query: `query {
+  incidences {
+    id
+    value {
+      str
+    }
+    typeId
+    embedding
+  }
+}`,
+				queryType: 'graphql',
+				createdAt: new Date().toISOString(),
+			},
+			{
+				id: 'sample-3',
+				name: 'Crypto Investigation: Graph Structure',
+				query: `query {
+  graphStructure(
+    ids: ["4", "5", "6", "7", "8", "9", "10", "11"]
+    depth: 3
+  ) {
+    nodes {
+      id
+      value {
+        str
+      }
+      typeId
+    }
+    edges {
+      from
+      to
+    }
+  }
+}`,
+				queryType: 'graphql',
+				createdAt: new Date().toISOString(),
+			},
+			{
+				id: 'sample-4',
+				name: 'Crypto Investigation: Schema Stats',
+				query: `query {
+  schemaStats {
+    totalIncidences
+    typeCount
+    roleCount
+    vectorCount
+  }
+}`,
+				queryType: 'graphql',
+				createdAt: new Date().toISOString(),
+			},
+		];
+
+		views = sampleViews;
+		saveViews();
+	}
 
 	function saveViews() {
 		localStorage.setItem('incdb-views', JSON.stringify(views));

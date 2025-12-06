@@ -135,6 +135,38 @@
 
 		Plotly.newPlot(plotContainer, [trace], layout);
 	}
+
+	async function loadDemoData() {
+		loading = true;
+		error = null;
+		
+		try {
+			// すべての Incidence を取得
+			const incidences = await getIncidences();
+			allVectors = incidences
+				.filter((inc) => inc.embedding && inc.embedding.length > 0)
+				.map((inc) => ({
+					id: inc.id,
+					vector: inc.embedding!,
+				}));
+			
+			if (allVectors.length === 0) {
+				error = 'No vectors found. Please load crypto investigation data first.';
+				loading = false;
+				return;
+			}
+			
+			// 高リスクスコアのベクトルをクエリとして使用（容疑者のベクトル）
+			const highRiskVector = allVectors.find((v) => v.vector[0] > 0.8)?.vector || allVectors[0].vector;
+			queryVector = highRiskVector;
+			
+			// 自動的に検索と可視化を実行
+			await performSearch();
+		} catch (e) {
+			error = e instanceof Error ? e.message : 'Failed to load demo data';
+			loading = false;
+		}
+	}
 </script>
 
 <div class="vector-page">
@@ -177,6 +209,9 @@
 		</div>
 		<button class="search-button" onclick={performSearch} disabled={loading}>
 			{loading ? 'Searching...' : 'Search'}
+		</button>
+		<button class="demo-button" onclick={loadDemoData} disabled={loading}>
+			🚀 Load Demo Data
 		</button>
 	</div>
 
@@ -287,6 +322,29 @@
 	}
 
 	.search-button:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.demo-button {
+		padding: 0.75rem 1.5rem;
+		background: #34c759;
+		color: #ffffff;
+		border: none;
+		border-radius: 8px;
+		font-size: 0.9375rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: background-color 0.2s;
+		height: fit-content;
+		margin-left: 0.5rem;
+	}
+
+	.demo-button:hover:not(:disabled) {
+		background: #28a745;
+	}
+
+	.demo-button:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
 	}

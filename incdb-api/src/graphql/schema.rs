@@ -502,6 +502,197 @@ impl Mutation {
             created_ids,
         })
     }
+
+    /// 暗号資産犯罪捜査デモデータを投入
+    async fn load_crypto_investigation_data(&self, ctx: &Context<'_>) -> async_graphql::Result<SampleDataResult> {
+        let graph = ctx.data::<Arc<Mutex<WorldGraph>>>()?;
+        let mut graph = graph.lock().map_err(|e| async_graphql::Error::new(format!("Failed to lock graph: {}", e)))?;
+
+        let mut created_ids = Vec::new();
+
+        // Type を作成
+        let person_type_id = graph.new_id();
+        let person_type = Incidence::new(person_type_id, Level::zero())
+            .with_val(Value::Str("Person".to_string()));
+        graph.add_incidence(person_type);
+        created_ids.push(person_type_id.0.to_string());
+
+        let address_type_id = graph.new_id();
+        let address_type = Incidence::new(address_type_id, Level::zero())
+            .with_val(Value::Str("CryptoAddress".to_string()));
+        graph.add_incidence(address_type);
+        created_ids.push(address_type_id.0.to_string());
+
+        let transaction_type_id = graph.new_id();
+        let transaction_type = Incidence::new(transaction_type_id, Level::zero())
+            .with_val(Value::Str("Transaction".to_string()));
+        graph.add_incidence(transaction_type);
+        created_ids.push(transaction_type_id.0.to_string());
+
+        // 人物を作成（容疑者、捜査官、被害者など）
+        // 容疑者1: タカシ・ヤマダ（マネーロンダリング容疑）
+        let suspect1_id = graph.new_id();
+        let suspect1 = Incidence::new(suspect1_id, Level::zero())
+            .with_type(person_type_id)
+            .with_val(Value::Str("タカシ・ヤマダ".to_string()))
+            .with_embedding(vec![0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3]); // 高リスクスコア
+        graph.add_incidence(suspect1);
+        created_ids.push(suspect1_id.0.to_string());
+
+        // 容疑者2: ジョン・スミス（詐欺容疑）
+        let suspect2_id = graph.new_id();
+        let suspect2 = Incidence::new(suspect2_id, Level::zero())
+            .with_type(person_type_id)
+            .with_val(Value::Str("ジョン・スミス".to_string()))
+            .with_embedding(vec![0.85, 0.75, 0.65, 0.55, 0.45, 0.35, 0.25]);
+        graph.add_incidence(suspect2);
+        created_ids.push(suspect2_id.0.to_string());
+
+        // 捜査官: サトウ・ケンイチ
+        let investigator_id = graph.new_id();
+        let investigator = Incidence::new(investigator_id, Level::zero())
+            .with_type(person_type_id)
+            .with_val(Value::Str("サトウ・ケンイチ".to_string()))
+            .with_embedding(vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]); // 低リスクスコア
+        graph.add_incidence(investigator);
+        created_ids.push(investigator_id.0.to_string());
+
+        // 被害者: ハナコ・タナカ
+        let victim_id = graph.new_id();
+        let victim = Incidence::new(victim_id, Level::zero())
+            .with_type(person_type_id)
+            .with_val(Value::Str("ハナコ・タナカ".to_string()))
+            .with_embedding(vec![0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]);
+        graph.add_incidence(victim);
+        created_ids.push(victim_id.0.to_string());
+
+        // 暗号資産アドレスを作成
+        // 容疑者1のウォレット
+        let addr1_id = graph.new_id();
+        let addr1 = Incidence::new(addr1_id, Level::zero())
+            .with_type(address_type_id)
+            .with_val(Value::Str("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa".to_string())) // Bitcoin address
+            .with_embedding(vec![0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2]); // 高取引頻度
+        graph.add_incidence(addr1);
+        created_ids.push(addr1_id.0.to_string());
+
+        // 容疑者2のウォレット
+        let addr2_id = graph.new_id();
+        let addr2 = Incidence::new(addr2_id, Level::zero())
+            .with_type(address_type_id)
+            .with_val(Value::Str("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb".to_string())) // Ethereum address
+            .with_embedding(vec![0.75, 0.65, 0.55, 0.45, 0.35, 0.25, 0.15]);
+        graph.add_incidence(addr2);
+        created_ids.push(addr2_id.0.to_string());
+
+        // ミキシングサービス（マネーロンダリング用）
+        let mixer_addr_id = graph.new_id();
+        let mixer_addr = Incidence::new(mixer_addr_id, Level::zero())
+            .with_type(address_type_id)
+            .with_val(Value::Str("1MixerServiceXYZ123456789".to_string()))
+            .with_embedding(vec![0.95, 0.85, 0.75, 0.65, 0.55, 0.45, 0.35]); // 非常に高リスク
+        graph.add_incidence(mixer_addr);
+        created_ids.push(mixer_addr_id.0.to_string());
+
+        // 被害者のウォレット
+        let victim_addr_id = graph.new_id();
+        let victim_addr = Incidence::new(victim_addr_id, Level::zero())
+            .with_type(address_type_id)
+            .with_val(Value::Str("1VictimWalletABC987654321".to_string()))
+            .with_embedding(vec![0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]);
+        graph.add_incidence(victim_addr);
+        created_ids.push(victim_addr_id.0.to_string());
+
+        // 関係: 人物とアドレスの所有関係
+        let owns1_id = graph.new_id();
+        let owns1 = Incidence::new(owns1_id, Level::zero())
+            .with_val(Value::Str("owns".to_string()))
+            .add_arg(suspect1_id, RoleId(1))
+            .add_arg(addr1_id, RoleId(2));
+        graph.add_incidence(owns1);
+        created_ids.push(owns1_id.0.to_string());
+
+        let owns2_id = graph.new_id();
+        let owns2 = Incidence::new(owns2_id, Level::zero())
+            .with_val(Value::Str("owns".to_string()))
+            .add_arg(suspect2_id, RoleId(1))
+            .add_arg(addr2_id, RoleId(2));
+        graph.add_incidence(owns2);
+        created_ids.push(owns2_id.0.to_string());
+
+        let owns3_id = graph.new_id();
+        let owns3 = Incidence::new(owns3_id, Level::zero())
+            .with_val(Value::Str("owns".to_string()))
+            .add_arg(victim_id, RoleId(1))
+            .add_arg(victim_addr_id, RoleId(2));
+        graph.add_incidence(owns3);
+        created_ids.push(owns3_id.0.to_string());
+
+        // トランザクションを作成
+        // 被害者から容疑者1への送金（詐欺被害）
+        let tx1_id = graph.new_id();
+        let tx1 = Incidence::new(tx1_id, Level::zero())
+            .with_type(transaction_type_id)
+            .with_val(Value::Str("TX001: 100 BTC".to_string()))
+            .add_arg(victim_addr_id, RoleId(1)) // from
+            .add_arg(addr1_id, RoleId(2)) // to
+            .with_embedding(vec![0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0]);
+        graph.add_incidence(tx1);
+        created_ids.push(tx1_id.0.to_string());
+
+        // 容疑者1からミキシングサービスへの送金（マネーロンダリング）
+        let tx2_id = graph.new_id();
+        let tx2 = Incidence::new(tx2_id, Level::zero())
+            .with_type(transaction_type_id)
+            .with_val(Value::Str("TX002: 80 BTC".to_string()))
+            .add_arg(addr1_id, RoleId(1)) // from
+            .add_arg(mixer_addr_id, RoleId(2)) // to
+            .with_embedding(vec![0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3]); // 高リスク
+        graph.add_incidence(tx2);
+        created_ids.push(tx2_id.0.to_string());
+
+        // 容疑者1から容疑者2への送金（共犯関係）
+        let tx3_id = graph.new_id();
+        let tx3 = Incidence::new(tx3_id, Level::zero())
+            .with_type(transaction_type_id)
+            .with_val(Value::Str("TX003: 20 BTC".to_string()))
+            .add_arg(addr1_id, RoleId(1)) // from
+            .add_arg(addr2_id, RoleId(2)) // to
+            .with_embedding(vec![0.85, 0.75, 0.65, 0.55, 0.45, 0.35, 0.25]);
+        graph.add_incidence(tx3);
+        created_ids.push(tx3_id.0.to_string());
+
+        // 関係: 容疑者間の共犯関係
+        let conspires_id = graph.new_id();
+        let conspires = Incidence::new(conspires_id, Level::zero())
+            .with_val(Value::Str("conspires_with".to_string()))
+            .add_arg(suspect1_id, RoleId(1))
+            .add_arg(suspect2_id, RoleId(2));
+        graph.add_incidence(conspires);
+        created_ids.push(conspires_id.0.to_string());
+
+        // 関係: 捜査官が容疑者を捜査
+        let investigates1_id = graph.new_id();
+        let investigates1 = Incidence::new(investigates1_id, Level::zero())
+            .with_val(Value::Str("investigates".to_string()))
+            .add_arg(investigator_id, RoleId(1))
+            .add_arg(suspect1_id, RoleId(2));
+        graph.add_incidence(investigates1);
+        created_ids.push(investigates1_id.0.to_string());
+
+        let investigates2_id = graph.new_id();
+        let investigates2 = Incidence::new(investigates2_id, Level::zero())
+            .with_val(Value::Str("investigates".to_string()))
+            .add_arg(investigator_id, RoleId(1))
+            .add_arg(suspect2_id, RoleId(2));
+        graph.add_incidence(investigates2);
+        created_ids.push(investigates2_id.0.to_string());
+
+        Ok(SampleDataResult {
+            created_count: created_ids.len(),
+            created_ids,
+        })
+    }
 }
 
 /// Incidence GraphQL Type
