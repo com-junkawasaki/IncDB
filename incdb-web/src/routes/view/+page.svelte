@@ -76,19 +76,27 @@
 					<div class="empty-state">No views yet. Create a new view to get started.</div>
 				{:else}
 					{#each views as view}
-						<div
-							class="view-item"
-							class:active={selectedView?.id === view.id}
-							onclick={() => (selectedView = view)}
-						>
+		<div
+			class="view-item"
+			class:active={selectedView?.id === view.id}
+			onclick={(e) => {
+				if ((e.target as HTMLElement).closest('.delete-button')) {
+					return;
+				}
+				selectedView = view;
+			}}
+		>
 							<div class="view-header">
 								<span class="view-name">{view.name}</span>
-								<button
-									class="delete-button"
-									onclick|stopPropagation={() => deleteView(view.id)}
-								>
-									×
-								</button>
+							<button
+								class="delete-button"
+								onclick={(e) => {
+									e.stopPropagation();
+									deleteView(view.id);
+								}}
+							>
+								×
+							</button>
 							</div>
 							<div class="view-meta">
 								<span class="view-type">{view.queryType}</span>
@@ -132,7 +140,7 @@
 
 {#if showCreateModal}
 	<div class="modal-overlay" onclick={() => (showCreateModal = false)}>
-		<div class="modal" onclick|stopPropagation>
+		<div class="modal" onclick={(e) => e.stopPropagation()}>
 			<h2>Create New View</h2>
 			<div class="modal-content">
 				<label>

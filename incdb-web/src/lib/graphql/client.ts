@@ -11,11 +11,8 @@ import type {
 	GraphQLGraphStructure,
 } from './types';
 
-const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080/graphql';
-
-// For server-side rendering, use the API proxy
-const isServer = typeof window === 'undefined';
-const GRAPHQL_URL = isServer ? '/api/graphql' : API_URL;
+// Always use the API proxy for both server and client
+const GRAPHQL_URL = '/api/graphql';
 
 const client = new GraphQLClient(GRAPHQL_URL);
 

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
 	import { executeDatalog } from '$lib/graphql/client';
 	import type { GraphQLDatalogResult } from '$lib/graphql/types';
-	import { monaco } from '$lib/monaco';
 
 	let queryType: 'datalog' | 'graphql' = 'datalog';
 	let datalogQuery = 'Inc(1)\nInc(2)';
@@ -16,11 +16,17 @@
 	let result: GraphQLDatalogResult | null = null;
 	let loading = false;
 	let error: string | null = null;
-	let datalogEditor: monaco.editor.IStandaloneCodeEditor | null = null;
-	let graphqlEditor: monaco.editor.IStandaloneCodeEditor | null = null;
+	let datalogEditor: any = null;
+	let graphqlEditor: any = null;
 	let queryHistory: string[] = [];
 
-	onMount(() => {
+	onMount(async () => {
+		// クライアントサイドでのみ Monaco Editor をインポート
+		if (!browser) return;
+
+		const monacoModule = await import('monaco-editor');
+		const monaco = monacoModule.default;
+
 		// Monaco Editor を初期化
 		const datalogContainer = document.getElementById('datalog-editor');
 		const graphqlContainer = document.getElementById('graphql-editor');

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { Network } from 'vis-network';
+	import { browser } from '$app/environment';
 	import { getGraphStructure } from '$lib/graphql/client';
 	import type { GraphQLGraphStructure } from '$lib/graphql/types';
 	import { convertToVisNetwork, getNodeColor } from '$lib/graph/utils';
@@ -11,12 +11,15 @@
 	let structure: GraphQLGraphStructure | null = null;
 	let loading = false;
 	let error: string | null = null;
-	let network: Network | null = null;
+	let network: any = null;
 	let networkContainer: HTMLDivElement | null = null;
+	let Network: any = null;
 
-	onMount(() => {
-		if (networkContainer) {
-			initializeNetwork();
+	onMount(async () => {
+		// クライアントサイドでのみ vis-network をインポート
+		if (browser) {
+			const visNetworkModule = await import('vis-network');
+			Network = visNetworkModule.Network;
 		}
 	});
 
@@ -27,7 +30,7 @@
 	});
 
 	function initializeNetwork() {
-		if (!networkContainer || !structure) return;
+		if (!networkContainer || !structure || !Network) return;
 
 		const { nodes, edges } = convertToVisNetwork(structure.nodes, structure.edges);
 

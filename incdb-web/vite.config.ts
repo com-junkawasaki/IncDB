@@ -12,8 +12,16 @@ export default defineConfig({
 		host: '0.0.0.0',
 		port: 5173
 	},
+	ssr: {
+		external: ['plotly.js-dist-min', 'monaco-editor', 'vis-network']
+	},
 	optimizeDeps: {
-		include: ['monaco-editor']
+		include: ['monaco-editor', 'plotly.js-dist-min', 'vis-network']
+	},
+	build: {
+		rollupOptions: {
+			external: ['plotly.js-dist-min', 'monaco-editor', 'vis-network']
+		}
 	}
 });
 

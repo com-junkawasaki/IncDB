@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
 	import { vectorSearch, getIncidences } from '$lib/graphql/client';
 	import type { GraphQLVectorSearchItem } from '$lib/graphql/types';
-	import Plotly from 'plotly.js-dist-min';
 	import { performPCA, calculateSimilarityMatrix, cosineSimilarity } from '$lib/vector/utils';
 
 	let visualizationMode: 'tsne' | 'pca' | 'similarity' = 'tsne';
@@ -13,8 +13,15 @@
 	let loading = false;
 	let error: string | null = null;
 	let plotContainer: HTMLDivElement | null = null;
+	let Plotly: any = null;
 
 	onMount(async () => {
+		// クライアントサイドでのみ Plotly をインポート
+		if (browser) {
+			const plotlyModule = await import('plotly.js-dist-min');
+			Plotly = plotlyModule.default;
+		}
+
 		try {
 			const incidences = await getIncidences();
 			allVectors = incidences
@@ -66,7 +73,7 @@
 	}
 
 	function renderDimensionReduction() {
-		if (!plotContainer) return;
+		if (!plotContainer || !Plotly) return;
 
 		const vectors = searchResults.length > 0
 			? searchResults.map((item) => item.incidence.embedding!).filter((v) => v !== null && v.length > 0)
@@ -107,7 +114,7 @@
 	}
 
 	function renderSimilarityMatrix() {
-		if (!plotContainer || searchResults.length === 0) return;
+		if (!plotContainer || !Plotly || searchResults.length === 0) return;
 
 		const vectors = searchResults.map((item) => item.incidence.embedding!).filter((v) => v !== null && v.length > 0);
 		if (vectors.length === 0) return;
