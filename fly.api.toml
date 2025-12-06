@@ -28,8 +28,8 @@ primary_region = "iad"
 
   [services.concurrency]
     type = "connections"
-    hard_limit = 1000
-    soft_limit = 500
+    hard_limit = 100
+    soft_limit = 50
 
   [[services.http_checks]]
     interval = "30s"
@@ -39,9 +39,9 @@ primary_region = "iad"
     path = "/health"
 
 [[vm]]
-  cpu_kind = "performance"
-  cpus = 4
-  memory_mb = 32768
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512
 
 [[mounts]]
   source = "incdb_data"
