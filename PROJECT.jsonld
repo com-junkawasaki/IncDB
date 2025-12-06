@@ -46,6 +46,37 @@
         "Docker Compose でビルド・動作確認完了"
       ],
       "incdb:status": "completed"
+    },
+    {
+      "@id": "incdb:ActivityPaperPageAndLeanProofs",
+      "@type": "prov:Activity",
+      "rdfs:label": "Paper Page and Lean Proofs Implementation",
+      "rdfs:comment": "Incidence-only Foundationの学術論文ページとLean 4による形式的証明の実装",
+      "prov:startedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-06T07:50:00Z"
+      },
+      "prov:endedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-06T08:30:00Z"
+      },
+      "incdb:changes": [
+        "Lean 4証明ファイル（proofs/incidence_foundation.lean）を作成し、AF0-AF5の公理と主要定理の証明スケッチを実装",
+        "Lean証明実行スクリプト（scripts/run_lean_proofs.sh）を作成し、検証結果をproofs/results.mdに保存",
+        "論文コンテンツ（incdb-web/src/lib/paper/content.ts）を学術論文形式で作成（Abstract, Introduction, Related Work, Methodology, Results, Conclusion, References）",
+        "Paperページ（incdb-web/src/routes/paper/+page.svelte）を実装し、論文全文とLean証明結果を表示",
+        "ナビゲーション（+layout.svelte）にPaperページを追加",
+        "論文ページのスタイリング（印刷対応、セクションナビゲーション、コードブロック表示）を実装"
+      ],
+      "incdb:deliverables": [
+        "proofs/incidence_foundation.lean",
+        "proofs/results.md",
+        "scripts/run_lean_proofs.sh",
+        "incdb-web/src/lib/paper/content.ts",
+        "incdb-web/src/routes/paper/+page.svelte",
+        "incdb-web/static/proofs/results.md"
+      ],
+      "incdb:status": "completed"
     }
   ],
   "incdb:components": [
@@ -87,7 +118,16 @@
       "rdfs:label": "incdb-web",
       "rdfs:comment": "Web UI（SvelteKit）",
       "incdb:status": "completed",
-      "incdb:note": "SvelteFlow (@xyflow/svelte) を使用したグラフ可視化を実装。vis-network から移行完了。Vector ページは Plotly.js を CDN から読み込み。Docker Compose で正常動作確認済み。"
+      "incdb:note": "SvelteFlow (@xyflow/svelte) を使用したグラフ可視化を実装。vis-network から移行完了。Vector ページは Plotly.js を CDN から読み込み。Paper ページを追加し、Incidence-only Foundationの学術論文とLean証明結果を表示。Docker Compose で正常動作確認済み。",
+      "incdb:pages": [
+        "Home",
+        "Schema",
+        "Query",
+        "View",
+        "Graph",
+        "Vector",
+        "Paper"
+      ]
     }
   ],
   "incdb:examples": [
@@ -134,6 +174,28 @@
       "rdfs:label": "Implementation Summary",
       "rdfs:comment": "実装サマリー",
       "incdb:path": "docs/SUMMARY.md"
+    },
+    {
+      "@id": "incdb:DocPaper",
+      "rdfs:label": "Academic Paper",
+      "rdfs:comment": "Incidence-only Foundation: A Unified Mathematical Foundation for Graph-Vector Databases",
+      "incdb:path": "incdb-web/src/lib/paper/content.ts",
+      "incdb:type": "academic-paper",
+      "incdb:page": "/paper"
+    },
+    {
+      "@id": "incdb:DocLeanProofs",
+      "rdfs:label": "Lean Proof Verification Results",
+      "rdfs:comment": "Lean 4による形式的証明の検証結果",
+      "incdb:path": "proofs/results.md",
+      "incdb:type": "formal-verification"
+    },
+    {
+      "@id": "incdb:DocLeanProofFile",
+      "rdfs:label": "Lean Proof File",
+      "rdfs:comment": "Incidence Foundationの形式的証明ファイル（Lean 4）",
+      "incdb:path": "proofs/incidence_foundation.lean",
+      "incdb:type": "formal-verification"
     }
   ]
 }
