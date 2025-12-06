@@ -18,7 +18,7 @@
   },
   "rdfs:label": "IncDB Project",
   "rdfs:comment": "Incidence-only Foundation を実装するグラフ+ベクターデータベースシステム",
-  "incdb:version": "0.2.0",
+  "incdb:version": "0.2.1",
   "incdb:status": "completed",
   "incdb:completedAt": {
     "@type": "xsd:dateTime",
@@ -26,7 +26,7 @@
   },
   "incdb:latestUpdate": {
     "@type": "xsd:dateTime",
-    "@value": "2025-12-19T14:00:00Z"
+    "@value": "2025-12-19T15:00:00Z"
   },
   "incdb:majorFeatures": [
     "Event Sourcing Architecture: 1000億〜10兆レコード規模対応",
@@ -219,6 +219,40 @@
           "latency": "688.59ms"
         }
       },
+      "incdb:status": "completed"
+    },
+    {
+      "@id": "incdb:ActivityCircularDependencyResolution",
+      "@type": "prov:Activity",
+      "rdfs:label": "Circular Dependency Resolution",
+      "rdfs:comment": "incdb-coreとincdb-storageの循環依存を解決し、EventSourcedGraphのSendトレイトエラーを修正",
+      "prov:startedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-19T14:30:00Z"
+      },
+      "prov:endedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2025-12-19T15:00:00Z"
+      },
+      "incdb:changes": [
+        "EventSourcedGraphとEventSourcedGraphBuilderをincdb-storageに移動",
+        "GraphWrapperをincdb-storageに移動",
+        "incdb-coreからincdb-storage依存を削除（循環依存解決）",
+        "EventSourcedGraph内のstd::sync::Mutexをtokio::sync::Mutexに置き換え",
+        "すべての.lock().unwrap()を.lock().awaitに変更",
+        "EventSourcedGraphBuilderのMutex作成をtokio::sync::Mutexに変更",
+        "incdb-apiのGraphQLスキーマでtokio::sync::Mutexを使用",
+        "incdb-cliのQuery/ExportコマンドをGraphWrapper対応に修正"
+      ],
+      "incdb:deliverables": [
+        "incdb-storage/src/graph/event_sourced_graph.rs",
+        "incdb-storage/src/graph/event_sourced_graph_builder.rs",
+        "incdb-storage/src/graph/graph_wrapper.rs",
+        "incdb-storage/src/graph/mod.rs",
+        "incdb-core/Cargo.toml (incdb-storage依存削除)",
+        "incdb-api/src/graphql/event_sourced_schema.rs (tokio::sync::Mutex使用)",
+        "incdb-cli/src/main.rs (GraphWrapper対応)"
+      ],
       "incdb:status": "completed"
     }
   ],

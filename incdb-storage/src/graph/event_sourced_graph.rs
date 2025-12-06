@@ -13,8 +13,9 @@ use crate::index::optimized_vector_index::{
     OptimizedVectorIndex, QueryFilters,
 };
 use crate::index::vector_index::SimpleVectorIndex;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::time::Duration;
+use tokio::sync::Mutex;
 use thiserror::Error;
 
 /// EventSourcedGraphエラー
@@ -94,19 +95,19 @@ impl EventSourcedGraph {
 
         // イベントストリームに追加
         {
-            let mut stream = self.event_stream.lock().unwrap();
+            let mut stream = self.event_stream.lock().await;
             stream.append(event.clone()).await?;
         }
 
         // エンティティ状態を更新
         {
-            let mut states = self.entity_states.lock().unwrap();
+            let mut states = self.entity_states.lock().await;
             states.update(event.entity_id, &event).await?;
         }
 
         // ベクトル埋め込みがあればベクトルインデックスに追加
         if let Some(embedding) = &event.embedding {
-            let mut index = self.vector_index.lock().unwrap();
+            let mut index = self.vector_index.lock().await;
             index.add(
                 event.id,
                 embedding,
@@ -128,7 +129,7 @@ impl EventSourcedGraph {
     /// Incidence（見つからない場合はNone）
     pub async fn get(&self, id: IId) -> Result<Option<Incidence>, EventSourcedGraphError> {
         // イベントストリームからイベントを取得
-        let stream = self.event_stream.lock().unwrap();
+        let stream = self.event_stream.lock().await;
         match stream.get(id).await {
             Ok(event) => {
                 // EventをIncidenceに変換
@@ -155,7 +156,7 @@ impl EventSourcedGraph {
         end: i64,
         entity_filter: Option<IId>,
     ) -> Result<Vec<Incidence>, EventSourcedGraphError> {
-        let stream = self.event_stream.lock().unwrap();
+        let stream = self.event_stream.lock().await;
         let events = stream.range(start, end).await?;
 
         // エンティティフィルタを適用
@@ -186,7 +187,7 @@ impl EventSourcedGraph {
         entity_id: IId,
         max_depth: usize,
     ) -> Result<Vec<IId>, EventSourcedGraphError> {
-        let stream = self.event_stream.lock().unwrap();
+        let stream = self.event_stream.lock().await;
         let events = stream.events_for_entity(entity_id).await?;
 
         let mut visited = std::collections::HashSet::new();
@@ -246,7 +247,7 @@ impl EventSourcedGraph {
         k: usize,
         filters: QueryFilters,
     ) -> Result<Vec<(IId, f32)>, EventSourcedGraphError> {
-        let index = self.vector_index.lock().unwrap();
+        let index = self.vector_index.lock().await;
         index
             .search_with_context(&query_vector, k, filters)
             .map_err(|e| EventSourcedGraphError::VectorIndex(e.to_string()))
@@ -261,13 +262,13 @@ impl EventSourcedGraph {
 
     /// Incidenceの数を取得（概算）
     pub async fn len(&self) -> Result<usize, EventSourcedGraphError> {
-        let stream = self.event_stream.lock().unwrap();
+        let stream = self.event_stream.lock().await;
         Ok(stream.len())
     }
 
     /// 空かどうかチェック
     pub async fn is_empty(&self) -> Result<bool, EventSourcedGraphError> {
-        let stream = self.event_stream.lock().unwrap();
+        let stream = self.event_stream.lock().await;
         Ok(stream.is_empty())
     }
 
@@ -277,13 +278,13 @@ impl EventSourcedGraph {
         ty: IId,
     ) -> Result<Vec<Incidence>, EventSourcedGraphError> {
         // エンティティ状態からタイプでフィルタ
-        let states = self.entity_states.lock().unwrap();
+        let states = self.entity_states.lock().await;
         let entity_states = states.all_states();
 
         let mut result = Vec::new();
         for state in entity_states {
             // タイプが一致するエンティティのイベントを取得
-            let stream = self.event_stream.lock().unwrap();
+            let stream = self.event_stream.lock().await;
             let events = stream.events_for_entity(state.entity_id).await?;
                 for event in events {
                     // EventからIncidenceに変換してタイプをチェック
@@ -302,7 +303,7 @@ impl EventSourcedGraph {
         &self,
         role: RoleId,
     ) -> Result<Vec<Incidence>, EventSourcedGraphError> {
-        let stream = self.event_stream.lock().unwrap();
+        let stream = self.event_stream.lock().await;
         let all_ids = stream.len();
         let mut result = Vec::new();
 
@@ -321,7 +322,7 @@ impl EventSourcedGraph {
 
     /// すべてのIncidenceをイテレート
     pub async fn iter(&self) -> Result<Vec<Incidence>, EventSourcedGraphError> {
-        let stream = self.event_stream.lock().unwrap();
+        let stream = self.event_stream.lock().await;
         let latest = stream.latest(10000).await?; // 最新10000件を取得
         Ok(latest.into_iter().map(|e| e.into()).collect())
     }
@@ -362,34 +363,38 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let backend = Arc::new(SledBackend::new(temp_dir.path()).unwrap());
 
-        let event_stream = Arc::new(Mutex::new(EventStream::new(backend.clone())));
+        let event_stream = Arc::new(tokio::sync::Mutex::new(EventStream::new(backend.clone())));
         let pq = ProductQuantization::new(128, 8, 256).ok();
         let compression = TemporalCompression::new(true, pq, false);
-        let snapshot_store = Arc::new(Mutex::new(SnapshotStore::new(
+        let snapshot_store = Arc::new(tokio::sync::Mutex::new(SnapshotStore::new(
             backend.clone(),
             Duration::from_secs(3600),
             compression.clone(),
         )));
-        let entity_states = Arc::new(Mutex::new(EntityStateStore::new(backend.clone())));
+        let entity_states = Arc::new(tokio::sync::Mutex::new(EntityStateStore::new(backend.clone())));
         let base_index = Box::new(SimpleVectorIndex::new());
-        let vector_index = Arc::new(Mutex::new(OptimizedVectorIndex::new(base_index, 128)));
+        let vector_index = Arc::new(tokio::sync::Mutex::new(OptimizedVectorIndex::new(base_index, 128)));
 
-        let mut graph = EventSourcedGraph::new(
+        let graph = EventSourcedGraph::new(
             event_stream,
             snapshot_store,
             entity_states,
             vector_index,
             compression,
         );
+        let graph = Arc::new(tokio::sync::Mutex::new(graph));
 
-        let id = graph.new_id();
+        let mut graph_guard = graph.lock().await;
+        let id = graph_guard.new_id();
         let incidence = Incidence::new(id, Level::zero())
             .with_val(Value::string("Test"));
 
-        let result_id = graph.add_incidence(incidence, None).await.unwrap();
+        let result_id = graph_guard.add_incidence(incidence, None).await.unwrap();
         assert_eq!(result_id, id);
+        drop(graph_guard);
 
-        let retrieved = graph.get(id).await.unwrap();
+        let graph_guard = graph.lock().await;
+        let retrieved = graph_guard.get(id).await.unwrap();
         assert!(retrieved.is_some());
         assert_eq!(retrieved.unwrap().id, id);
     }

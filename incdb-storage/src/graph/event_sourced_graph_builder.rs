@@ -11,6 +11,7 @@ use crate::index::vector_index::SimpleVectorIndex;
 use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::sync::Mutex;
 
 /// EventSourcedGraphビルダー
 pub struct EventSourcedGraphBuilder {
@@ -62,24 +63,24 @@ impl EventSourcedGraphBuilder {
         let backend = Arc::new(SledBackend::new(&storage_path)?);
 
         // イベントストリームを作成
-        let event_stream = Arc::new(std::sync::Mutex::new(EventStream::new(backend.clone())));
+        let event_stream = Arc::new(Mutex::new(EventStream::new(backend.clone())));
 
         // 圧縮エンジンを作成
         let pq = ProductQuantization::new(self.vector_dim, 8, 256).ok();
         let compression = TemporalCompression::new(true, pq, false);
 
         // スナップショットストアを作成
-        let snapshot_store = Arc::new(std::sync::Mutex::new(SnapshotStore::new(
+        let snapshot_store = Arc::new(Mutex::new(SnapshotStore::new(
             backend.clone(),
             self.snapshot_interval,
             compression.clone(),
         )));
 
         // エンティティ状態ストアを作成
-        let entity_states = Arc::new(std::sync::Mutex::new(EntityStateStore::new(backend.clone())));
+        let entity_states = Arc::new(Mutex::new(EntityStateStore::new(backend.clone())));
 
         // ベクトルインデックスを作成（HNSW使用）
-        let vector_index = Arc::new(std::sync::Mutex::new(
+        let vector_index = Arc::new(Mutex::new(
             OptimizedVectorIndex::new_hnsw(self.vector_dim)
                 .map_err(|e| format!("Failed to create HNSW index: {}", e))?,
         ));

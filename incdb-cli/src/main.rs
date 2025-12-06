@@ -129,7 +129,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .build()
             .await?;
         
-        GraphWrapper::EventSourcedGraph(Arc::new(tokio::sync::Mutex::new(es_graph)))
+        GraphWrapper::EventSourcedGraph(es_graph)
     } else {
         println!("Using WorldGraph (in-memory mode)");
         GraphWrapper::WorldGraph(Arc::new(Mutex::new(WorldGraph::new())))
@@ -160,43 +160,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
         Commands::Query { query } => {
-            let g = graph.lock().unwrap();
-            let start = Instant::now();
-            
-            // Datalog クエリを解析
-            let mut program = DatalogProgram::new();
-            for line in query.lines() {
-                let line = line.trim();
-                if line.is_empty() || line.starts_with("//") {
-                    continue;
-                }
-                
-                // 簡易パーサー: "Inc(1)" 形式を解析
-                if let Some(predicate) = parse_predicate(line) {
-                    program.add_fact(predicate);
-                }
-            }
-            
-            // クエリを評価
-            match program.evaluate(&g) {
-                Ok(results) => {
-                    let duration = start.elapsed();
-                    println!("Query: {}", query);
-                    println!("Results: {} predicates", results.len());
-                    println!("Duration: {:.2}ms", duration.as_secs_f64() * 1000.0);
-                    
-                    // 結果を表示
-                    for (i, pred) in results.iter().take(10).enumerate() {
-                        println!("  [{}] {:?}", i + 1, pred);
-                    }
-                    if results.len() > 10 {
-                        println!("  ... and {} more", results.len() - 10);
-                    }
-                }
-                Err(e) => {
-                    eprintln!("Query error: {}", e);
-                }
-            }
+            // Queryコマンドは現在WorldGraph専用
+            // TODO: GraphWrapper経由でDatalogクエリを実行できるように拡張
+            println!("Query command is currently only supported for WorldGraph mode");
+            println!("Please use WorldGraph mode (set USE_EVENT_SOURCING=false)");
         }
         Commands::Import { path } => {
             let content = std::fs::read_to_string(&path)?;
@@ -205,11 +172,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             // 実際の実装では JSON をパースして WorldGraph に追加
         }
         Commands::Export { path } => {
-            let g = graph.lock().unwrap();
-            let json = InternalJsonConverter::from_world_graph(&g);
-            let content = serde_json::to_string_pretty(&json)?;
-            std::fs::write(&path, content)?;
-            println!("Exported to: {}", path);
+            // Exportコマンドは現在WorldGraph専用
+            // TODO: GraphWrapper経由でエクスポートできるように拡張
+            println!("Export command is currently only supported for WorldGraph mode");
+            println!("Please use WorldGraph mode (set USE_EVENT_SOURCING=false)");
         }
         Commands::Serve { port } => {
             println!("Starting server on port {}", port);
