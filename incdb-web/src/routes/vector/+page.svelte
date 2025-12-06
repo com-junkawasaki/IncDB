@@ -14,6 +14,7 @@
 	let error: string | null = null;
 	let plotContainer: HTMLDivElement | null = null;
 	let Plotly: any = null;
+	let plotlyLoaded = false;
 
 	onMount(async () => {
 		// クライアントサイドでのみ Plotly を読み込み（CDN から）
@@ -25,7 +26,12 @@
 					script.src = 'https://cdn.plot.ly/plotly-2.27.1.min.js';
 					script.onload = () => {
 						Plotly = (window as any).Plotly;
+						plotlyLoaded = true;
 						console.log('Plotly loaded from CDN');
+						// 既にデータがある場合は可視化を更新
+						if (searchResults.length > 0 || allVectors.length > 0) {
+							updateVisualization();
+						}
 					};
 					script.onerror = () => {
 						console.error('Failed to load Plotly from CDN');
@@ -34,6 +40,7 @@
 					document.head.appendChild(script);
 				} else {
 					Plotly = (window as any).Plotly;
+					plotlyLoaded = true;
 					console.log('Plotly already loaded');
 				}
 			} catch (e) {
@@ -68,6 +75,8 @@
 		try {
 			const result = await vectorSearch(queryVector, k);
 			searchResults = result.incidences;
+			// Plotly が読み込まれるまで待つ
+			await waitForPlotly();
 			updateVisualization();
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Unknown error';
@@ -76,14 +85,50 @@
 		}
 	}
 
+	function waitForPlotly(): Promise<void> {
+		return new Promise((resolve) => {
+			if (plotlyLoaded && Plotly) {
+				resolve();
+				return;
+			}
+			// Plotly が読み込まれるまで最大5秒待つ
+			const maxWait = 5000;
+			const startTime = Date.now();
+			const checkInterval = setInterval(() => {
+				if ((window as any).Plotly) {
+					Plotly = (window as any).Plotly;
+					plotlyLoaded = true;
+					clearInterval(checkInterval);
+					resolve();
+				} else if (Date.now() - startTime > maxWait) {
+					clearInterval(checkInterval);
+					console.warn('Plotly loading timeout');
+					resolve(); // タイムアウトしても続行
+				}
+			}, 100);
+		});
+	}
+
 	function updateVisualization() {
-		if (!plotContainer) return;
+		if (!plotContainer || !Plotly || !plotlyLoaded) {
+			console.log('Cannot visualize: missing requirements', {
+				plotContainer: !!plotContainer,
+				Plotly: !!Plotly,
+				plotlyLoaded
+			});
+			return;
+		}
 
 		const vectors = searchResults.length > 0
-			? searchResults.map((item) => item.incidence.embedding!).filter((v) => v !== null)
-			: allVectors.map((v) => v.vector);
+			? searchResults.map((item) => item.incidence.embedding!).filter((v) => v !== null && v.length > 0)
+			: allVectors.map((v) => v.vector).filter((v) => v.length > 0);
 
-		if (vectors.length === 0) return;
+		if (vectors.length === 0) {
+			console.log('No vectors to visualize');
+			return;
+		}
+
+		console.log('Updating visualization with', vectors.length, 'vectors');
 
 		if (visualizationMode === 'similarity') {
 			renderSimilarityMatrix();
@@ -161,6 +206,9 @@
 		error = null;
 		
 		try {
+			// Plotly が読み込まれるまで待つ
+			await waitForPlotly();
+			
 			// すべての Incidence を取得
 			const incidences = await getIncidences();
 			allVectors = incidences
@@ -220,7 +268,9 @@
 		<div class="control-group">
 			<label>
 				<span>Visualization Mode</span>
-				<select bind:value={visualizationMode} onchange={updateVisualization}>
+				<select bind:value={visualizationMode} onchange={() => {
+					updateVisualization();
+				}}>
 					<option value="tsne">t-SNE</option>
 					<option value="pca">PCA</option>
 					<option value="similarity">Similarity Matrix</option>
