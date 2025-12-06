@@ -30,7 +30,7 @@
 						console.log('Plotly loaded from CDN');
 						// 既にデータがある場合は可視化を更新
 						if (searchResults.length > 0 || allVectors.length > 0) {
-							updateVisualization();
+							setTimeout(() => updateVisualization(), 100);
 						}
 					};
 					script.onerror = () => {
@@ -138,16 +138,33 @@
 	}
 
 	function renderDimensionReduction() {
-		if (!plotContainer || !Plotly) return;
+		if (!plotContainer || !Plotly || !plotlyLoaded) {
+			console.log('Cannot render: missing requirements', {
+				plotContainer: !!plotContainer,
+				Plotly: !!Plotly,
+				plotlyLoaded
+			});
+			return;
+		}
 
 		const vectors = searchResults.length > 0
 			? searchResults.map((item) => item.incidence.embedding!).filter((v) => v !== null && v.length > 0)
 			: allVectors.map((v) => v.vector).filter((v) => v.length > 0);
 
-		if (vectors.length === 0) return;
+		if (vectors.length === 0) {
+			console.log('No vectors to render');
+			return;
+		}
+
+		console.log('Rendering dimension reduction with', vectors.length, 'vectors');
 
 		// PCA を使用（t-SNE は計算コストが高いため、簡易的に PCA を使用）
 		const projected = performPCA(vectors, 2);
+
+		if (projected.length === 0) {
+			console.error('PCA projection failed');
+			return;
+		}
 
 		const x = projected.map((p) => p[0]);
 		const y = projected.map((p) => p[1]);
@@ -167,7 +184,7 @@
 					: undefined,
 				colorscale: 'Viridis',
 			},
-		} as Plotly.PlotData;
+		};
 
 		const layout = {
 			title: visualizationMode === 'tsne' ? 't-SNE Visualization (PCA-based)' : 'PCA Visualization',
@@ -175,14 +192,26 @@
 			yaxis: { title: 'PC2' },
 		};
 
-		Plotly.newPlot(plotContainer, [trace], layout);
+		try {
+			Plotly.newPlot(plotContainer, [trace], layout, { responsive: true });
+			console.log('Plot rendered successfully');
+		} catch (e) {
+			console.error('Failed to render plot:', e);
+			error = `Failed to render visualization: ${e instanceof Error ? e.message : 'Unknown error'}`;
+		}
 	}
 
 	function renderSimilarityMatrix() {
-		if (!plotContainer || !Plotly || searchResults.length === 0) return;
+		if (!plotContainer || !Plotly || !plotlyLoaded || searchResults.length === 0) {
+			console.log('Cannot render similarity matrix: missing requirements');
+			return;
+		}
 
 		const vectors = searchResults.map((item) => item.incidence.embedding!).filter((v) => v !== null && v.length > 0);
-		if (vectors.length === 0) return;
+		if (vectors.length === 0) {
+			console.log('No vectors for similarity matrix');
+			return;
+		}
 
 		const matrix = calculateSimilarityMatrix(vectors);
 
@@ -190,7 +219,7 @@
 			z: matrix,
 			type: 'heatmap',
 			colorscale: 'Viridis',
-		} as Plotly.PlotData;
+		};
 
 		const layout = {
 			title: 'Similarity Matrix',
@@ -198,7 +227,13 @@
 			yaxis: { title: 'Vector Index' },
 		};
 
-		Plotly.newPlot(plotContainer, [trace], layout);
+		try {
+			Plotly.newPlot(plotContainer, [trace], layout, { responsive: true });
+			console.log('Similarity matrix rendered successfully');
+		} catch (e) {
+			console.error('Failed to render similarity matrix:', e);
+			error = `Failed to render visualization: ${e instanceof Error ? e.message : 'Unknown error'}`;
+		}
 	}
 
 	async function loadDemoData() {
@@ -296,7 +331,7 @@
 	{/if}
 
 	<div class="visualization-container">
-		<div bind:this={plotContainer} class="plot-canvas"></div>
+		<div class="plot-canvas" bind:this={plotContainer}></div>
 	</div>
 
 	{#if searchResults.length > 0}

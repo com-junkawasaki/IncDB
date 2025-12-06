@@ -10,6 +10,7 @@
 		{ path: '/view', label: 'View', icon: '👁️' },
 		{ path: '/graph', label: 'Graph', icon: '🕸️' },
 		{ path: '/vector', label: 'Vector', icon: '📊' },
+		{ path: '/paper', label: 'Paper', icon: '📄' },
 	];
 
 	function isActive(path: string): boolean {
