@@ -24,9 +24,11 @@ services:
       dockerfile: Dockerfile.web
     container_name: incdb-web
     ports:
-      - "5173:5173"
+      - "5173:3000"
     environment:
-      - VITE_API_URL=http://localhost:8080
+      - API_URL=http://api:8080
+      - PORT=5173
+      - HOST=0.0.0.0
     depends_on:
       api:
         condition: service_healthy
