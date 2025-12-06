@@ -4,9 +4,11 @@
 
 use async_graphql::{Context, Object, Schema, EmptySubscription};
 use incdb_core::model::{IId, Incidence, Level, RoleId, Value, WorldGraph};
-use incdb_query::datalog::{DatalogProgram, Predicate, Rule, DatalogError};
+use incdb_query::datalog::{DatalogProgram, Predicate};
 use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
+
+use crate::graphql::benchmark;
 
 /// GraphQL Query
 pub struct Query;
@@ -366,7 +368,17 @@ fn parse_predicate(s: &str) -> Option<Predicate> {
 }
 
 /// GraphQL Mutation
-pub struct Mutation;
+pub struct Mutation {
+    benchmark: benchmark::BenchmarkMutation,
+}
+
+impl Default for Mutation {
+    fn default() -> Self {
+        Self {
+            benchmark: benchmark::BenchmarkMutation,
+        }
+    }
+}
 
 #[Object]
 impl Mutation {
@@ -501,6 +513,47 @@ impl Mutation {
             created_count: created_ids.len(),
             created_ids,
         })
+    }
+
+    /// ベンチマーク: 書き込み性能を計測
+    async fn benchmark_write(
+        &self,
+        ctx: &Context<'_>,
+        config: benchmark::WriteBenchmarkConfig,
+    ) -> async_graphql::Result<benchmark::BenchmarkResult> {
+        self.benchmark.benchmark_write(ctx, config).await
+    }
+
+    /// ベンチマーク: 読み込み性能を計測
+    async fn benchmark_read(
+        &self,
+        ctx: &Context<'_>,
+        config: benchmark::ReadBenchmarkConfig,
+    ) -> async_graphql::Result<benchmark::BenchmarkResult> {
+        self.benchmark.benchmark_read(ctx, config).await
+    }
+
+    /// ベンチマーク: 多段hop性能を計測
+    async fn benchmark_multi_hop(
+        &self,
+        ctx: &Context<'_>,
+        config: benchmark::MultiHopBenchmarkConfig,
+    ) -> async_graphql::Result<benchmark::BenchmarkResult> {
+        self.benchmark.benchmark_multi_hop(ctx, config).await
+    }
+
+    /// ベンチマーク: Vector Index Hop 性能を計測
+    async fn benchmark_vector_hop(
+        &self,
+        ctx: &Context<'_>,
+        config: benchmark::VectorHopBenchmarkConfig,
+    ) -> async_graphql::Result<benchmark::BenchmarkResult> {
+        self.benchmark.benchmark_vector_hop(ctx, config).await
+    }
+
+    /// ベンチマーク: グラフをクリア
+    async fn benchmark_clear_graph(&self, ctx: &Context<'_>) -> async_graphql::Result<bool> {
+        self.benchmark.clear_graph(ctx).await
     }
 
     /// 暗号資産犯罪捜査デモデータを投入
@@ -855,7 +908,7 @@ pub struct VectorSearchItem {
 pub type AppSchema = Schema<Query, Mutation, EmptySubscription>;
 
 pub fn create_schema(graph: Arc<Mutex<WorldGraph>>) -> AppSchema {
-    Schema::build(Query, Mutation, EmptySubscription)
+    Schema::build(Query, Mutation::default(), EmptySubscription)
         .data(graph)
         .finish()
 }

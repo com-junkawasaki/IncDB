@@ -10,6 +10,7 @@
 		{ path: '/view', label: 'View', icon: '👁️' },
 		{ path: '/graph', label: 'Graph', icon: '🕸️' },
 		{ path: '/vector', label: 'Vector', icon: '📊' },
+		{ path: '/benchmark', label: 'Benchmark', icon: '⚡' },
 		{ path: '/paper', label: 'Paper', icon: '📄' },
 	];
 
