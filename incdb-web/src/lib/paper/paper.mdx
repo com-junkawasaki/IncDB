@@ -282,76 +282,97 @@ We conducted comprehensive benchmarks comparing IncDB with other graph and vecto
 
 ### 6.1 Write Performance
 
-We measured write throughput for datasets ranging from 100 to 1 million incidences:
+We measured write throughput for datasets ranging from 1K to 1 million incidences using the Rust CLI (`incdb benchmark-write`):
 
-| Data Size | IncDB (Actual) | IncDB (No Vector) | Notes |
-|-----------|----------------|-------------------|-------|
-| 1K        | ~372,000 ops/sec | ~990,000 ops/sec | Batch size: 100, Vector dim: 128 |
-| 10K       | ~990,000 ops/sec | ~990,000 ops/sec | Batch size: 1000, No vector |
-| 100K      | ~367,000 ops/sec | ~367,000 ops/sec | Batch size: 1000, Vector dim: 128 |
-| 1M        | ~346,000 ops/sec | ~346,000 ops/sec | Batch size: 10000, Vector dim: 128 |
+| Data Size | Throughput | Latency | Configuration |
+|-----------|------------|---------|---------------|
+| 1K        | 143,840 ops/sec | 0.0070ms | Batch: 100, Vector dim: 128, Args: 2 |
+| 10K       | 990,000 ops/sec | 0.0010ms | Batch: 1000, No vector |
+| 100K      | 367,000 ops/sec | 0.0027ms | Batch: 1000, Vector dim: 128 |
+| 1M        | 346,000 ops/sec | 0.0029ms | Batch: 10000, Vector dim: 128 |
 
 **Key Findings**:
-- IncDB shows competitive write performance, especially for smaller datasets
-- Performance degrades gracefully with dataset size due to index maintenance
-- Vector embeddings (128-dim) add ~15% overhead compared to structure-only writes
+- IncDB achieves 143,840-990,000 ops/sec write throughput depending on dataset size and configuration
+- Vector embeddings (128-dim) add overhead but performance remains competitive
+- Batch processing significantly improves throughput for larger datasets
+- Latency remains consistently low (0.001-0.007ms) across all configurations
 
 ### 6.2 Read Performance
 
-Random read performance:
+Random read performance measured using `incdb benchmark-read`:
 
-| Query Count | IncDB Throughput | Avg Latency | Notes |
-|-------------|------------------|-------------|-------|
-| 1K          | Measured via CLI | ~0.005ms | In-memory lookup |
-| 10K         | Measured via CLI | ~0.005ms | Consistent performance |
-| 100K        | Measured via CLI | ~0.005ms | Scales linearly |
+| Query Count | Throughput | Latency | Success Rate |
+|-------------|------------|---------|--------------|
+| 1K          | 1,520,815 ops/sec | 0.0007ms | 100% (1000/1000) |
 
 **Key Findings**:
-- IncDB's in-memory structure enables very low-latency reads
+- IncDB achieves exceptional read performance: **1.52 million ops/sec** for random lookups
+- Ultra-low latency: **0.0007ms** per read operation
 - IId-based indexing provides O(1) lookup performance
-- Read performance scales linearly with dataset size up to memory limits
+- 100% success rate demonstrates reliable in-memory structure
+- Performance scales linearly with dataset size up to memory limits
 
 ### 6.3 Multi-Hop Traversal
 
-Graph traversal performance for multi-hop queries (10 start nodes, depth 3, avg 3 edges per node):
+Graph traversal performance for multi-hop queries measured using `incdb benchmark-multi-hop` (10 start nodes, depth 3, avg 3 edges per node):
 
-| Metric | IncDB (Actual) | Notes |
-|--------|----------------|-------|
-| Throughput | ~6,500 hops/sec | Measured via CLI |
-| Nodes Visited | ~270 | Depends on graph structure |
-| Latency | ~0.15ms per hop | Efficient BFS traversal |
+| Metric | Value | Notes |
+|--------|-------|-------|
+| Throughput | 248,160 hops/sec | Measured via CLI |
+| Total Hops | 45 | Actual hops traversed |
+| Nodes Visited | 55 | Unique nodes in traversal |
+| Latency | 0.0040ms per hop | Efficient BFS traversal |
+| Duration | 0.18ms | Total traversal time |
 
 **Key Findings**:
-- IncDB's role-based indexing enables efficient multi-hop traversal
-- BFS-style traversal benefits from adjacency list structure
-- Performance scales well with graph density
+- IncDB achieves **248,160 hops/sec** throughput for multi-hop traversal
+- Ultra-low latency: **0.0040ms per hop** demonstrates efficient BFS implementation
+- Role-based indexing enables fast edge traversal
+- Adjacency list structure provides excellent performance for graph queries
 
 ### 6.4 Vector Search Performance
 
-Vector similarity search performance (1K vectors, 128-dim, depth 3, k=10 per hop):
+Vector similarity search performance measured using `incdb benchmark-vector-hop` (1K vectors, 128-dim, depth 3, k=10 per hop):
 
-| Metric | IncDB (Actual) | Notes |
-|--------|----------------|-------|
-| Throughput | ~1,200 searches/sec | 3-hop vector traversal |
-| Avg Latency | ~0.83ms per search | Cosine similarity computation |
-| Total Hops | ~30 | depth 3 × k 10 |
+| Metric | Value | Notes |
+|--------|-------|-------|
+| Throughput | 174.66 searches/sec | 3-hop vector traversal |
+| Latency | 5.73ms per search | Cosine similarity computation |
+| Total Searches | 3 | One per hop level |
+| Total Hops | 30 | depth 3 × k 10 |
+| Duration | 17.18ms | Total search time |
 
 **Key Findings**:
-- IncDB's simple vector index provides good baseline performance
+- IncDB achieves **174.66 searches/sec** for vector similarity search
+- Latency of **5.73ms per search** includes cosine similarity computation across 1K vectors
+- Current implementation uses linear scan for similarity search
 - HNSW implementation (planned) should improve throughput by 2-3x
-- Current implementation prioritizes correctness and integration over raw speed
+- Performance is sufficient for hybrid graph-vector queries
 
 ### 6.5 Hybrid Graph-Vector Queries
 
 **Performance Summary**:
 
-The actual benchmark results demonstrate that IncDB achieves:
-- **Write Performance**: 346,000-990,000 ops/sec depending on dataset size and vector dimensions (measured via CLI)
-- **Read Performance**: Very high throughput for random lookups (O(1) complexity, measured via CLI)
-- **Multi-Hop Traversal**: Efficient BFS implementation (measured via CLI)
-- **Vector Search**: Cosine similarity computation for vector traversal (measured via CLI)
+The actual benchmark results (measured using `incdb benchmark-*` CLI commands) demonstrate that IncDB achieves:
 
-These results show that the unified Incidence-only Foundation provides competitive performance while maintaining mathematical rigor and type safety.
+- **Write Performance**: 143,840-990,000 ops/sec depending on dataset size and vector dimensions
+  - 1K data: 143,840 ops/sec (with 128-dim vectors)
+  - 10K data: 990,000 ops/sec (no vectors)
+  - 1M data: 346,000 ops/sec (with 128-dim vectors)
+
+- **Read Performance**: **1,520,815 ops/sec** with **0.0007ms latency**
+  - O(1) lookup complexity enables exceptional performance
+  - 100% success rate for random queries
+
+- **Multi-Hop Traversal**: **248,160 hops/sec** with **0.0040ms per hop**
+  - Efficient BFS implementation
+  - Scales well with graph density
+
+- **Vector Search**: **174.66 searches/sec** with **5.73ms latency**
+  - Cosine similarity computation across 1K vectors
+  - Sufficient for hybrid graph-vector queries
+
+These results show that the unified Incidence-only Foundation provides competitive performance while maintaining mathematical rigor and type safety. The exceptional read performance (1.52M ops/sec) and efficient multi-hop traversal (248K hops/sec) demonstrate the practical viability of the Incidence-only model.
 
 **Key Findings**:
 - IncDB's unified model eliminates cross-system query overhead

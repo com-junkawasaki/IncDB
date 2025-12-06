@@ -274,7 +274,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 println!("Generated {} test incidences", test_size);
             }
-            let g = g; // 再借用
+            let graph_size = g.len(); // 再取得
 
             let start = Instant::now();
             let mut total_read = 0;
@@ -287,14 +287,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             // ランダムな ID で読み込み
             use std::collections::hash_map::DefaultHasher;
             use std::hash::{Hash, Hasher};
+            
+            // 利用可能なIDを収集
+            let available_ids: Vec<IId> = g.iter().map(|inc| inc.id).collect();
+            let graph_size = available_ids.len();
+            
+            if graph_size == 0 {
+                eprintln!("Error: No incidences available for read benchmark.");
+                return Ok(());
+            }
+            
             let mut hasher = DefaultHasher::new();
             
             for i in 0..query_count {
                 i.hash(&mut hasher);
                 let hash = hasher.finish();
-                let random_id = IId((hash % graph_size as u64) + 1);
-                if g.get(random_id).is_some() {
-                    total_read += 1;
+                let idx = (hash % graph_size as u64) as usize;
+                if let Some(&id) = available_ids.get(idx) {
+                    if g.get(id).is_some() {
+                        total_read += 1;
+                    }
                 }
                 
                 // 進捗表示
