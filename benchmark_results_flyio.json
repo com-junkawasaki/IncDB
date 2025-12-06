@@ -2,9 +2,9 @@
   "write": {
     "operation": "write",
     "dataSize": 1000,
-    "durationMs": 406.364119,
-    "throughput": 2460.8471891190766,
-    "latencyMs": 0.406364119,
+    "durationMs": 357.865414,
+    "throughput": 2794.346591984438,
+    "latencyMs": 0.357865414,
     "metadata": [
       {
         "key": "batch_size",
@@ -23,9 +23,9 @@
   "read": {
     "operation": "read",
     "dataSize": 1000,
-    "durationMs": 0.84875,
-    "throughput": 2356.40648011782,
-    "latencyMs": 0.424375,
+    "durationMs": 0.76034,
+    "throughput": 2630.402188494621,
+    "latencyMs": 0.38017,
     "metadata": [
       {
         "key": "query_count",
@@ -38,9 +38,57 @@
     ]
   },
   "multi_hop": {
-    "error": "GraphQL errors: [{'message': 'Failed to iterate: Event stream error: Serialization error: invalid value: integer `1502764133`, expected variant index 0 <= i < 7', 'locations': [{'line': 3, 'column': 9}], 'path': ['benchmarkMultiHop']}]"
+    "operation": "multi_hop",
+    "dataSize": 1000,
+    "durationMs": 0.0359,
+    "throughput": 0.0,
+    "latencyMs": 0.0,
+    "metadata": [
+      {
+        "key": "start_nodes",
+        "value": "10"
+      },
+      {
+        "key": "depth",
+        "value": "3"
+      },
+      {
+        "key": "total_hops",
+        "value": "0"
+      },
+      {
+        "key": "total_nodes_visited",
+        "value": "10"
+      }
+    ]
   },
   "vector_hop": {
-    "error": "GraphQL errors: [{'message': 'Failed to iterate: Event stream error: Serialization error: invalid value: integer `1502764133`, expected variant index 0 <= i < 7', 'locations': [{'line': 3, 'column': 9}], 'path': ['benchmarkVectorHop']}]"
+    "operation": "vector_hop",
+    "dataSize": 1,
+    "durationMs": 0.00594,
+    "throughput": 505050.50505050505,
+    "latencyMs": 0.00198,
+    "metadata": [
+      {
+        "key": "vector_dim",
+        "value": "128"
+      },
+      {
+        "key": "depth",
+        "value": "3"
+      },
+      {
+        "key": "k_per_hop",
+        "value": "10"
+      },
+      {
+        "key": "total_searches",
+        "value": "3"
+      },
+      {
+        "key": "total_hops",
+        "value": "3"
+      }
+    ]
   }
 }

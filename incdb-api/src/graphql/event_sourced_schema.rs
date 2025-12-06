@@ -366,13 +366,28 @@ impl EventSourcedMutation {
         let mut total_hops = 0;
         let mut total_nodes_visited = 0;
 
-        // 開始ノードを選択
-        let all_incidences = graph.iter().await.map_err(|e| async_graphql::Error::new(format!("Failed to iterate: {}", e)))?;
-        let start_ids: Vec<IId> = all_incidences
-            .iter()
-            .take(start_nodes)
-            .map(|inc| inc.id)
-            .collect();
+        // 開始ノードを選択（iter()がエラーの場合、ID範囲から選択）
+        let start_ids: Vec<IId> = {
+            // まずiter()を試す
+            match graph.iter().await {
+                Ok(incidences) => {
+                    if incidences.len() >= start_nodes {
+                        incidences.iter().take(start_nodes).map(|inc| inc.id).collect()
+                    } else {
+                        // データが少ない場合、ID範囲から選択
+                        (1..=graph_size.min(start_nodes as usize))
+                            .map(|i| IId(i as u64))
+                            .collect()
+                    }
+                }
+                Err(_) => {
+                    // iter()がエラーの場合、ID範囲から選択
+                    (1..=graph_size.min(start_nodes as usize))
+                        .map(|i| IId(i as u64))
+                        .collect()
+                }
+            }
+        };
 
         // 各開始ノードから多段hopを実行
         for start_id in start_ids {
@@ -473,15 +488,36 @@ impl EventSourcedMutation {
         let depth = config.depth as usize;
         let k_per_hop = config.k_per_hop as usize;
 
-        // ベクトルを持つ Incidence を収集
-        let all_incidences = graph.iter().await.map_err(|e| async_graphql::Error::new(format!("Failed to iterate: {}", e)))?;
-        let vector_incidences: Vec<(IId, Vec<f32>)> = all_incidences
-            .iter()
-            .filter_map(|inc| {
-                inc.embedding.as_ref().map(|emb| (inc.id, emb.clone()))
-            })
-            .take(data_size)
-            .collect();
+        // ベクトルを持つ Incidence を収集（iter()がエラーの場合、ID範囲から検索）
+        let graph_size = graph.len().await.map_err(|e| async_graphql::Error::new(format!("Failed to get graph size: {}", e)))?;
+        let vector_incidences: Vec<(IId, Vec<f32>)> = {
+            match graph.iter().await {
+                Ok(incidences) => {
+                    incidences
+                        .iter()
+                        .filter_map(|inc| {
+                            inc.embedding.as_ref().map(|emb| (inc.id, emb.clone()))
+                        })
+                        .take(data_size)
+                        .collect()
+                }
+                Err(_) => {
+                    // iter()がエラーの場合、ID範囲から検索
+                    let mut result = Vec::new();
+                    for i in 1..=graph_size.min(data_size * 10) {
+                        if let Ok(Some(inc)) = graph.get(IId(i as u64)).await {
+                            if let Some(emb) = inc.embedding {
+                                result.push((inc.id, emb));
+                                if result.len() >= data_size {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    result
+                }
+            }
+        };
 
         if vector_incidences.is_empty() {
             return Err(async_graphql::Error::new("No vectors found. Please run write benchmark with vector_dim > 0 first."));

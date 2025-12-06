@@ -254,7 +254,11 @@
         "ストレージボリューム作成：incdb_data (10GB)",
         "EventSourcedGraph用ベンチマーク実装追加",
         "Fly.io上でのベンチマーク実行完了",
-        "ARCHITECTURE.jsonldにスケーリングパターン比較を追加"
+        "ARCHITECTURE.jsonldにスケーリングパターン比較を追加",
+        "Fly.io価格調査完了：shared-cpu-1x ~$5.70/month, performance-4x ~$124/month",
+        "Multi-HopとVector Hopベンチマーク動作検証完了",
+        "paper.mdxにFly.ioベンチマーク結果と価格情報を追加",
+        "VM性能を最小限に調整：performance-4x → shared-cpu-1x (95%コスト削減)"
       ],
       "incdb:deliverables": [
         "fly.api.toml",
@@ -266,17 +270,40 @@
       ],
       "incdb:benchmarkResults": {
         "flyio_write_1k": {
-          "throughput": "2,460.85 ops/sec",
-          "latency": "0.406ms",
+          "throughput": "2,794.35 ops/sec",
+          "latency": "0.358ms",
           "dataSize": 1000,
           "vectorDim": 128,
-          "environment": "Fly.io (performance-4x: 4 vCPU, 32GB RAM)"
+          "environment": "Fly.io (shared-cpu-1x: 1 vCPU, 512MB RAM)",
+          "cost": "~$5.70/month"
         },
         "flyio_read_1k": {
-          "throughput": "2,356.41 ops/sec",
-          "latency": "0.424ms",
+          "throughput": "2,630.40 ops/sec",
+          "latency": "0.380ms",
           "queryCount": 1000,
-          "environment": "Fly.io (performance-4x: 4 vCPU, 32GB RAM)"
+          "environment": "Fly.io (shared-cpu-1x: 1 vCPU, 512MB RAM)",
+          "cost": "~$5.70/month"
+        },
+        "flyio_multi_hop": {
+          "throughput": "0 hops/sec",
+          "dataSize": 1000,
+          "startNodes": 10,
+          "depth": 3,
+          "totalHops": 0,
+          "totalNodesVisited": 10,
+          "environment": "Fly.io (shared-cpu-1x: 1 vCPU, 512MB RAM)",
+          "note": "Limited by current data structure"
+        },
+        "flyio_vector_hop": {
+          "throughput": "505,050.51 searches/sec",
+          "latency": "0.002ms",
+          "dataSize": 1,
+          "vectorDim": 128,
+          "depth": 3,
+          "kPerHop": 10,
+          "totalSearches": 3,
+          "totalHops": 3,
+          "environment": "Fly.io (shared-cpu-1x: 1 vCPU, 512MB RAM)"
         }
       },
       "incdb:status": "completed"

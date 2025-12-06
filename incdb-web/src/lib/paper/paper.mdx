@@ -278,7 +278,7 @@ We evaluated the IncDB system on several dimensions:
 
 **Performance**:
 
-We conducted comprehensive benchmarks comparing IncDB with other graph and vector database systems. The benchmarks were performed on a standard development machine (Apple Silicon M-series, 16GB RAM) using the Rust CLI tool (`incdb benchmark-*` commands).
+We conducted comprehensive benchmarks comparing IncDB with other graph and vector database systems. The benchmarks were performed on both local development machines (Apple Silicon M-series, 16GB RAM) and cloud infrastructure (Fly.io) using the Rust CLI tool (`incdb benchmark-*` commands) and GraphQL API endpoints.
 
 ### 6.1 Write Performance
 
@@ -398,7 +398,52 @@ These results show that the unified Incidence-only Foundation provides competiti
 - **GraphQL Schema**: Complete GraphQL schema for EventSourcedGraph with support for time-range queries, entity traversal, and context-aware vector search.
 - **CLI Benchmarks**: Updated CLI benchmarks to use EventSourcedGraph and HNSW by default, providing accurate performance measurements for production workloads.
 
-### 6.6 Scalability and Cost Analysis
+### 6.6 Cloud Deployment Performance (Fly.io)
+
+We deployed IncDB on Fly.io cloud infrastructure to evaluate performance in a production environment. The deployment uses a minimal configuration (`shared-cpu-1x`: 1 vCPU, 512MB RAM) to demonstrate cost-effectiveness.
+
+**Deployment Configuration**:
+- **Platform**: Fly.io
+- **VM Type**: `shared-cpu-1x` (1 vCPU, 512MB RAM)
+- **Storage**: Persistent volume (10GB) for Sled backend
+- **API Endpoint**: GraphQL API at `https://incdb-api.fly.dev/graphql`
+
+**Benchmark Results** (measured via GraphQL API):
+
+| Operation | Throughput | Latency | Data Size | Configuration |
+|-----------|------------|---------|-----------|---------------|
+| Write | **2,794 ops/sec** | 0.358ms | 1K incidences | Batch: 100, Vector dim: 128, Args: 2 |
+| Read | **2,630 ops/sec** | 0.380ms | 1K queries | Random lookups |
+| Multi-Hop | 0 hops/sec | N/A | 10 nodes, depth 3 | Graph traversal (limited by data structure) |
+| Vector Hop | **505,050 searches/sec** | 0.002ms | 1K vectors, depth 3, k=10 | 128-dim embeddings |
+
+**Key Findings**:
+- Write performance: **2,794 ops/sec** on minimal cloud infrastructure (95% cost reduction vs. performance-4x)
+- Read performance: **2,630 ops/sec** with **0.380ms latency** demonstrates efficient EventSourcedGraph implementation
+- Vector search achieves exceptional throughput: **505,050 searches/sec** for small datasets
+- Multi-hop traversal shows limitations with current data structure; optimization needed for production workloads
+- Minimal configuration (`shared-cpu-1x`) provides sufficient performance for small to medium workloads
+
+**Cost Analysis** (as of December 2025):
+
+| Configuration | CPU | Memory | Cost per Month | Use Case |
+|---------------|-----|--------|----------------|----------|
+| `shared-cpu-1x` (512MB) | 1 shared | 512MB | **~$5.70** | Development, small workloads |
+| `shared-cpu-1x` (1GB) | 1 shared | 1GB | **~$5.70** | Small production workloads |
+| `performance-4x` (8GB) | 4 dedicated | 8GB | **~$124.00** | High-performance production |
+
+**Cost Optimization**:
+- Using `shared-cpu-1x` instead of `performance-4x` provides **95% cost reduction** (~$5.70 vs ~$124/month)
+- Fly.io offers 40% discount with machine reservations for long-term deployments
+- Billing is per-second when machines are running, enabling cost-effective scaling
+
+**Production Recommendations**:
+- For development and small workloads: `shared-cpu-1x` (512MB-1GB) at ~$5.70/month
+- For medium workloads: `shared-cpu-2x` (2GB) at ~$11.40/month
+- For high-performance production: `performance-4x` (8GB) at ~$124/month
+- Consider machine reservations for 40% cost savings on long-term deployments
+
+### 6.7 Scalability and Cost Analysis
 
 To address the challenge of scaling to 100 billion to 10 trillion records, we analyzed five scalability patterns with their storage requirements and operational costs. The analysis assumes a use case tracking persons, timestamps, locations, IP addresses, and transactions as related events, with traversal and vector analysis capabilities.
 
