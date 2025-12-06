@@ -8,11 +8,15 @@ license.workspace = true
 [dependencies]
 incdb-core = { path = "../incdb-core" }
 sled = { workspace = true }
-rocksdb = { workspace = true }
+rocksdb = { workspace = true, optional = true }
 async-trait = { workspace = true }
 thiserror = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+
+[features]
+default = []
+rocksdb-backend = ["rocksdb"]
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["test-util"] }

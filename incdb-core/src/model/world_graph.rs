@@ -47,12 +47,14 @@ impl WorldGraph {
         let index = self.incidences.len();
 
         // ID が未設定の場合は自動生成
-        if id.0 == 0 {
+        let id = if id.0 == 0 {
             let new_id = IId(self.next_id);
             self.next_id += 1;
             incidence.id = new_id;
-            let id = new_id;
-        }
+            new_id
+        } else {
+            id
+        };
 
         // インデックスを更新
         self.id_to_index.insert(incidence.id, index);

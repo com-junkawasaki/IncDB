@@ -5,7 +5,6 @@ members = [
     "incdb-query",
     "incdb-api",
     "incdb-cli",
-    "incdb-web",
 ]
 resolver = "2"
 

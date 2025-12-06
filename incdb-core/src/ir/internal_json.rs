@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 /// 内部 JSON 形式
 ///
 /// 計算・圧縮・ベクター処理に最適化された形式
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InternalJson {
     /// ノード（軽量な属性のみ）
     pub nodes: Vec<NodeJson>,
@@ -54,7 +54,7 @@ pub struct NodeJson {
 }
 
 /// Incidence JSON（主役）
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IncidenceJson {
     /// Incidence ID
     pub id: String,
@@ -72,8 +72,8 @@ pub struct IncidenceJson {
     pub vector: Option<Vec<f32>>,
 }
 
-impl From<&Incidence> for IncidenceJson {
-    fn from(inc: &Incidence) -> Self {
+impl From<&crate::model::Incidence> for IncidenceJson {
+    fn from(inc: &crate::model::Incidence) -> Self {
         // 簡易実装: 最初の arg と role を使用
         // 実際の実装では、すべての args を展開する必要がある
         Self {

@@ -6,7 +6,7 @@ pub mod jsonld;
 pub mod internal_json;
 pub mod converter;
 
-pub use jsonld::{JsonLd, JsonLdContext};
+pub use jsonld::{JsonLd, JsonLdContext, JsonLdIncidence};
 pub use internal_json::{InternalJson, NodeJson, IncidenceJson};
 pub use converter::{JsonLdConverter, InternalJsonConverter};
 

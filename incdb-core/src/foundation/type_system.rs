@@ -30,7 +30,7 @@ impl Type {
     }
 
     /// 必須ロールを追加
-    pub fn with_required_role(mut self, role: crate::foundation::axioms::RoleId) -> Self {
+    pub fn with_required_role(mut self, role: crate::model::RoleId) -> Self {
         self.signature.required_roles.push(role);
         self
     }
@@ -66,13 +66,13 @@ impl TypeChecker {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::foundation::axioms::RoleId;
+    use crate::model::{RoleId, IId};
 
     #[test]
     fn test_type_creation() {
         let type_id = TypeId(IId(1));
         let level = Level::zero();
-        let ty = Type::new(type_id, "TestType".to_string(), level);
+        let ty = Type::new(type_id.clone(), "TestType".to_string(), level);
 
         assert_eq!(ty.name, "TestType");
         assert_eq!(ty.signature.level, level);
@@ -82,7 +82,7 @@ mod tests {
     fn test_type_with_roles() {
         let type_id = TypeId(IId(1));
         let role = RoleId(1);
-        let ty = Type::new(type_id, "TestType".to_string(), Level::zero())
+        let ty = Type::new(type_id.clone(), "TestType".to_string(), Level::zero())
             .with_required_role(role);
 
         assert_eq!(ty.signature.required_roles.len(), 1);

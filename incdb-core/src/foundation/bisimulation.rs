@@ -24,7 +24,6 @@ impl<'a> BisimulationComputer<'a> {
     /// 固定点反復アルゴリズムを使用
     pub fn compute_bisimulation(&self, i: IId, j: IId) -> BisimulationResult {
         let mut relation: HashSet<(IId, IId)> = HashSet::new();
-        let mut prev_relation: HashSet<(IId, IId)> = HashSet::new();
 
         // 初期状態: (i, j) を含む
         relation.insert((i, j));
@@ -32,16 +31,15 @@ impl<'a> BisimulationComputer<'a> {
         // 固定点に達するまで反復
         let max_iterations = 1000;
         for _ in 0..max_iterations {
-            prev_relation = relation.clone();
-            relation = self.refine_relation(&relation);
-
-            if relation == prev_relation {
+            let new_relation = self.refine_relation(&relation);
+            if new_relation == relation {
                 // 固定点に達した
                 return BisimulationResult {
                     are_bisimilar: relation.contains(&(i, j)),
                     relation,
                 };
             }
+            relation = new_relation;
         }
 
         // 最大反復回数に達した（おそらく bisimilar ではない）

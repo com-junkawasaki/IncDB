@@ -5,7 +5,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Incidence が持つ値
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Value {
     /// 文字列
     Str(String),

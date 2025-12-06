@@ -3,6 +3,8 @@
 //! JSON-LD ↔ 内部 JSON の変換
 
 use crate::ir::{InternalJson, JsonLd};
+use crate::ir::internal_json::IncidenceJson;
+use crate::ir::jsonld::JsonLdIncidence;
 use crate::model::WorldGraph;
 
 /// JSON-LD から内部 JSON への変換器
@@ -14,7 +16,7 @@ impl JsonLdConverter {
         let mut internal = InternalJson::new();
 
         for inc in &jsonld.graph {
-            let incidence = crate::ir::IncidenceJson {
+            let incidence = IncidenceJson {
                 id: inc.id.clone(),
                 relation: inc.y.clone().unwrap_or_default(),
                 arg: inc.x.clone().unwrap_or_default(),
@@ -40,7 +42,7 @@ impl InternalJsonConverter {
         let mut jsonld = JsonLd::new(context);
 
         for inc in &internal.incidences {
-            let jsonld_inc = crate::ir::JsonLdIncidence {
+            let jsonld_inc = JsonLdIncidence {
                 id: inc.id.clone(),
                 r#type: "Incidence".to_string(),
                 x: Some(inc.arg.clone()),
@@ -60,7 +62,7 @@ impl InternalJsonConverter {
         let mut jsonld = JsonLd::new(context);
 
         for inc in graph.iter() {
-            let jsonld_inc: crate::ir::JsonLdIncidence = inc.into();
+            let jsonld_inc: JsonLdIncidence = inc.into();
             jsonld.add_incidence(jsonld_inc);
         }
 
@@ -72,7 +74,7 @@ impl InternalJsonConverter {
         let mut internal = InternalJson::new();
 
         for inc in graph.iter() {
-            let incidence: crate::ir::IncidenceJson = inc.into();
+            let incidence: IncidenceJson = inc.into();
             internal.add_incidence(incidence);
         }
 
@@ -88,7 +90,7 @@ mod tests {
     fn test_conversion() {
         let context = crate::ir::JsonLdContext::default();
         let mut jsonld = JsonLd::new(context);
-        let inc = crate::ir::JsonLdIncidence {
+        let inc = JsonLdIncidence {
             id: "inc:1".to_string(),
             r#type: "Incidence".to_string(),
             x: Some("arg:2".to_string()),

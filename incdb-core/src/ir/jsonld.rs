@@ -6,7 +6,7 @@ use crate::model::{IId, Incidence};
 use serde::{Deserialize, Serialize};
 
 /// JSON-LD ドキュメント
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JsonLd {
     /// @context
     #[serde(rename = "@context")]
@@ -87,7 +87,7 @@ impl Default for JsonLdContext {
 }
 
 /// JSON-LD Incidence
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JsonLdIncidence {
     /// @id
     #[serde(rename = "@id")]
@@ -105,8 +105,8 @@ pub struct JsonLdIncidence {
     pub vector: Option<Vec<f32>>,
 }
 
-impl From<&Incidence> for JsonLdIncidence {
-    fn from(inc: &Incidence) -> Self {
+impl From<&crate::model::Incidence> for JsonLdIncidence {
+    fn from(inc: &crate::model::Incidence) -> Self {
         Self {
             id: format!("inc:{}", inc.id.0),
             r#type: "Incidence".to_string(),

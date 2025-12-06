@@ -105,7 +105,7 @@ pub fn aggregate_relation_embedding(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::{Level, RoleId};
+    use crate::model::{Level, RoleId, Incidence};
     use crate::vector::embedding::Embedding;
 
     #[test]

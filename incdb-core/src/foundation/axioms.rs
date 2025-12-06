@@ -2,7 +2,7 @@
 //!
 //! 公理系の型定義と基本構造
 
-use crate::model::{IId, Level, Value};
+use crate::model::{IId, Level, Value, RoleId};
 
 /// AF0: Coinductive Universe
 ///
@@ -15,7 +15,7 @@ pub trait CoinductiveUniverse {
 /// AF1: 構造写像
 ///
 /// 各 Incidence は有限個の Incidence を args に持つ
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Structure {
     /// この Incidence が参照する他の Incidence の集合
     pub args: Vec<IId>,
@@ -81,10 +81,5 @@ pub struct SetId(pub IId);
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct CategoryId(pub IId);
 
-/// Role ID
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct RoleId(pub u32);
-
-/// Type ID の定義（前方宣言用）
-pub use TypeId;
+// RoleId は model モジュールから再エクスポート
 

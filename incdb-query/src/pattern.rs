@@ -121,12 +121,9 @@ impl PatternQuery {
         bindings: &mut std::collections::HashMap<PatternVar, IId>,
     ) -> Result<(), PatternError> {
         match pattern {
-            Pattern::Incidence { var, r#type, args } => {
+            Pattern::Incidence { var, r#type: _type, args: _args } => {
                 // 簡易実装: 最初のマッチを返す
                 for inc in graph.iter() {
-                    if let Some(type_name) = r#type {
-                        // Type チェックは簡易実装
-                    }
                     bindings.insert(var.clone(), inc.id);
                     break;
                 }
@@ -174,7 +171,7 @@ impl PatternQuery {
                     .ok_or_else(|| PatternError::Evaluation("No value".to_string()))
             }
             PatternExpr::Value(val) => Ok(val.clone()),
-            PatternExpr::Attr(var, key) => {
+            PatternExpr::Attr(_var, _key) => {
                 // 簡易実装
                 Err(PatternError::Evaluation("Attr not implemented".to_string()))
             }

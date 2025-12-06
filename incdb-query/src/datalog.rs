@@ -15,7 +15,7 @@ pub enum DatalogError {
 }
 
 /// 述語
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Predicate {
     /// Incidence 述語
     Inc(IId),

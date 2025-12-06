@@ -11,6 +11,8 @@ use thiserror::Error;
 pub enum BackendError {
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
+    #[error("Sled error: {0}")]
+    Sled(#[from] sled::Error),
     #[error("Serialization error: {0}")]
     Serialization(String),
     #[error("Not found: {0}")]

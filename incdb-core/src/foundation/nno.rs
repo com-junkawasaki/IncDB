@@ -31,8 +31,8 @@ impl NatDef {
 pub struct NnoWitness {
     /// NNO の定義
     pub nno: NatDef,
-    /// 初期性の検証関数（オプション）
-    /// 実際の証明は実行時に検証される
+    // 初期性の検証関数（オプション）
+    // 実際の証明は実行時に検証される
 }
 
 impl NnoWitness {
@@ -51,7 +51,7 @@ mod tests {
         let nat_ty = TypeId(IId(1));
         let zero = IId(2);
         let succ = IId(3);
-        let nno = NatDef::new(nat_ty, zero, succ);
+        let nno = NatDef::new(nat_ty.clone(), zero, succ);
 
         assert_eq!(nno.nat_ty, nat_ty);
         assert_eq!(nno.zero, zero);

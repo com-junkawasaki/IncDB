@@ -11,6 +11,12 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct IId(pub u64);
 
+impl std::fmt::Display for IId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 /// Type Universe Level
 ///
 /// U₀, U₁, U₂, ... の階層を表現
@@ -41,7 +47,7 @@ pub struct RoleId(pub u32);
 /// Incidence 構造
 ///
 /// 借用チェッカーを活用するため、IId による参照を使用
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Incidence {
     /// Incidence ID
     pub id: IId,
