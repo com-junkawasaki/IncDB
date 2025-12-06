@@ -1,0 +1,36 @@
+# Fly.io configuration for IncDB Web UI
+# Usage: flyctl launch --config fly.web.toml
+
+app = "incdb-web"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile.web"
+
+[env]
+  PORT = "3000"
+  HOST = "0.0.0.0"
+  API_URL = "https://incdb-api.fly.dev"
+
+[[services]]
+  internal_port = 3000
+  protocol = "tcp"
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 500
+    soft_limit = 250
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512

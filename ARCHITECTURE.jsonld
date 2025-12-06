@@ -77,6 +77,193 @@
       "rdfs:label": "Vector Integration",
       "rdfs:comment": "構造検索とベクター検索のハイブリッド"
     }
-  ]
+  ],
+  "incdb:scalingPatterns": [
+    {
+      "@id": "incdb:ScalingPatternFlyIoTigris",
+      "rdfs:label": "Fly.io + Tigris",
+      "rdfs:comment": "Fly.ioでAPI/Web UIをホスト、Tigrisでオブジェクトストレージ",
+      "incdb:cost100B": "$281/month",
+      "incdb:cost10T": "$3,311/month",
+      "incdb:compute": "$251/month (performance-4x: 4 vCPU, 32GB RAM)",
+      "incdb:storage": "$31/month (Tigris Infrequent Access: 3.06 TB)",
+      "incdb:bandwidth": "$2/month (100GB outbound)",
+      "incdb:costEfficiency": "⭐⭐⭐⭐⭐",
+      "incdb:advantages": [
+        "最も低コスト",
+        "データ転送無料（Tigris）",
+        "Rustネイティブサポート",
+        "シンプルな構成"
+      ],
+      "incdb:disadvantages": [
+        "リージョン選択が限定的",
+        "エンタープライズ機能が限定的"
+      ]
+    },
+    {
+      "@id": "incdb:ScalingPatternAWSEKS",
+      "rdfs:label": "AWS EKS + S3",
+      "rdfs:comment": "Amazon EKSでKubernetesクラスタ、S3でオブジェクトストレージ",
+      "incdb:cost100B": "$1,533/month",
+      "incdb:cost10T": "$27,200/month",
+      "incdb:compute": "$1,194/month (8 nodes m5.xlarge)",
+      "incdb:storage": "$70/month (S3 Standard: 3.06 TB)",
+      "incdb:bandwidth": "$41/month",
+      "incdb:costEfficiency": "⭐⭐⭐",
+      "incdb:advantages": [
+        "豊富なサービス統合",
+        "エンタープライズ対応",
+        "高い可用性"
+      ],
+      "incdb:disadvantages": [
+        "コストが高い",
+        "複雑な構成"
+      ]
+    },
+    {
+      "@id": "incdb:ScalingPatternAzureAKS",
+      "rdfs:label": "Azure AKS + Blob Storage",
+      "rdfs:comment": "Azure Kubernetes Serviceでクラスタ、Blob Storageでストレージ",
+      "incdb:cost100B": "$1,337/month",
+      "incdb:cost10T": "$26,800/month",
+      "incdb:compute": "$1,121/month (8 nodes Standard_D4s_v3)",
+      "incdb:storage": "$56/month (Blob Storage Hot: 3.06 TB)",
+      "incdb:bandwidth": "$32/month",
+      "incdb:costEfficiency": "⭐⭐⭐",
+      "incdb:advantages": [
+        "コントロールプレーン無料（Free tier）",
+        "Azure統合",
+        "エンタープライズ対応"
+      ],
+      "incdb:disadvantages": [
+        "リージョン選択が限定的",
+        "VM価格が中程度"
+      ]
+    },
+    {
+      "@id": "incdb:ScalingPatternGCPGKE",
+      "rdfs:label": "GCP GKE + Cloud Storage",
+      "rdfs:comment": "Google Kubernetes Engineでクラスタ、Cloud Storageでストレージ",
+      "incdb:cost100B": "$1,715/month",
+      "incdb:cost10T": "$28,200/month",
+      "incdb:compute": "$1,182/month (8 nodes n1-standard-4)",
+      "incdb:storage": "$61/month (Cloud Storage Standard: 3.06 TB)",
+      "incdb:bandwidth": "$33/month",
+      "incdb:costEfficiency": "⭐⭐",
+      "incdb:advantages": [
+        "GCPサービス統合",
+        "機械学習連携",
+        "エンタープライズ対応"
+      ],
+      "incdb:disadvantages": [
+        "コストが高い",
+        "複雑な構成"
+      ]
+    },
+    {
+      "@id": "incdb:ScalingPatternScalewayKapsule",
+      "rdfs:label": "Scaleway Kapsule + Object Storage",
+      "rdfs:comment": "Scaleway Kubernetes Kapsuleでクラスタ、Object Storageでストレージ",
+      "incdb:cost100B": "$466/month",
+      "incdb:cost10T": "$3,491/month",
+      "incdb:compute": "$419/month (8 nodes GP1-L: 8 vCPU, 32GB RAM)",
+      "incdb:storage": "$34/month (Object Storage: 3.06 TB)",
+      "incdb:bandwidth": "$1/month",
+      "incdb:costEfficiency": "⭐⭐⭐⭐⭐",
+      "incdb:advantages": [
+        "低コスト",
+        "コントロールプレーン無料",
+        "ストレージコストが低い"
+      ],
+      "incdb:disadvantages": [
+        "リージョン選択が限定的（欧州中心）",
+        "エンタープライズ機能が限定的"
+      ]
+    },
+    {
+      "@id": "incdb:ScalingPatternHetznerCloud",
+      "rdfs:label": "Hetzner Cloud + Object Storage",
+      "rdfs:comment": "Hetzner CloudでVM、Object Storageでストレージ（手動Kubernetes構築）",
+      "incdb:cost100B": "$622/month",
+      "incdb:cost10T": "$7,455/month",
+      "incdb:compute": "$545/month (8 nodes CPX51: 16 vCPU, 32GB RAM)",
+      "incdb:storage": "$67/month (Object Storage: 3.06 TB)",
+      "incdb:bandwidth": "$1/month",
+      "incdb:costEfficiency": "⭐⭐⭐⭐",
+      "incdb:advantages": [
+        "最も低コスト（Kubernetes構成）",
+        "高性能VM",
+        "データ転送コストが低い"
+      ],
+      "incdb:disadvantages": [
+        "マネージドKubernetesなし（手動構築）",
+        "リージョン選択が限定的（欧州中心）",
+        "エンタープライズサポートが限定的"
+      ]
+    },
+    {
+      "@id": "incdb:ScalingPatternDigitalOceanDOKS",
+      "rdfs:label": "DigitalOcean Kubernetes + Spaces",
+      "rdfs:comment": "DigitalOcean Kubernetesでクラスタ、Spacesでオブジェクトストレージ",
+      "incdb:cost100B": "$1,514/month",
+      "incdb:cost10T": "$8,352/month",
+      "incdb:compute": "$1,440/month (8 nodes Memory-Optimized: 2 vCPU, 16GB RAM × 2)",
+      "incdb:storage": "$62/month (Spaces: 3.06 TB)",
+      "incdb:bandwidth": "$1/month",
+      "incdb:costEfficiency": "⭐⭐⭐",
+      "incdb:advantages": [
+        "コントロールプレーン無料",
+        "シンプルな価格体系",
+        "開発者向けドキュメント"
+      ],
+      "incdb:disadvantages": [
+        "ノードコストが中程度",
+        "エンタープライズ機能が限定的"
+      ]
+    },
+    {
+      "@id": "incdb:ScalingPatternLinodeLKE",
+      "rdfs:label": "Linode LKE + Object Storage",
+      "rdfs:comment": "Linode Kubernetes Engineでクラスタ、Object Storageでストレージ",
+      "incdb:cost100B": "$4,448/month",
+      "incdb:cost10T": "$11,286/month",
+      "incdb:compute": "$4,368/month (8 nodes Dedicated 32GB: 16 vCPU, 32GB RAM)",
+      "incdb:storage": "$62/month (Object Storage: 3.06 TB)",
+      "incdb:bandwidth": "$1/month",
+      "incdb:costEfficiency": "⭐",
+      "incdb:advantages": [
+        "コントロールプレーン無料",
+        "エンタープライズ機能（HAオプション）",
+        "Akamai CDN統合"
+      ],
+      "incdb:disadvantages": [
+        "ノードコストが高い",
+        "総コストが高い"
+      ]
+    }
+  ],
+  "incdb:scalingRecommendation": {
+    "@id": "incdb:ScalingRecommendation",
+    "rdfs:label": "スケーリング推奨構成",
+    "rdfs:comment": "100億レコード規模での推奨構成",
+    "incdb:costOptimized": {
+      "@id": "incdb:ScalingPatternFlyIoTigris",
+      "rdfs:label": "Fly.io + Tigris",
+      "incdb:cost": "$281/month",
+      "incdb:reason": "最も低コスト、データ転送無料、Rustネイティブサポート"
+    },
+    "incdb:balanced": {
+      "@id": "incdb:ScalingPatternScalewayKapsule",
+      "rdfs:label": "Scaleway Kapsule + Object Storage",
+      "incdb:cost": "$466/month",
+      "incdb:reason": "低コスト、マネージドKubernetes、ストレージコストが低い"
+    },
+    "incdb:enterprise": {
+      "@id": "incdb:ScalingPatternAWSEKS",
+      "rdfs:label": "AWS EKS + S3",
+      "incdb:cost": "$1,533/month",
+      "incdb:reason": "豊富なサービス統合、エンタープライズ対応、高い可用性"
+    }
+  }
 }
 

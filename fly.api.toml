@@ -1,0 +1,48 @@
+# Fly.io configuration for IncDB API Server
+# Usage: flyctl launch --config fly.api.toml
+
+app = "incdb-api"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile.api"
+
+[env]
+  RUST_LOG = "info"
+  USE_EVENT_SOURCING = "true"
+  BIND_ADDR = "0.0.0.0:8080"
+  INCDB_STORAGE_PATH = "/data"
+
+[[services]]
+  internal_port = 8080
+  protocol = "tcp"
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 1000
+    soft_limit = 500
+
+  [[services.http_checks]]
+    interval = "30s"
+    timeout = "10s"
+    grace_period = "5s"
+    method = "GET"
+    path = "/health"
+
+[[vm]]
+  cpu_kind = "performance"
+  cpus = 4
+  memory_mb = 32768
+
+[[mounts]]
+  source = "incdb_data"
+  destination = "/data"
