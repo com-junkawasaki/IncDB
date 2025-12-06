@@ -1,0 +1,46 @@
+{
+  "@context": {
+    "dodaf": "http://dodaf.mil/dodaf#",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "incdb": "http://example.org/incdb#"
+  },
+  "@graph": [
+    {
+      "@id": "incdb:CapabilityDataStorage",
+      "@type": "dodaf:Capability",
+      "rdfs:label": "Data Storage",
+      "rdfs:comment": "Incidence データの永続化とインデックス管理",
+      "dodaf:realizedBy": ["incdb:ComponentStorage"]
+    },
+    {
+      "@id": "incdb:CapabilityQueryExecution",
+      "@type": "dodaf:Capability",
+      "rdfs:label": "Query Execution",
+      "rdfs:comment": "Incidence Datalog とパターンマッチクエリの実行",
+      "dodaf:realizedBy": ["incdb:ComponentQuery"]
+    },
+    {
+      "@id": "incdb:CapabilityVectorSearch",
+      "@type": "dodaf:Capability",
+      "rdfs:label": "Vector Search",
+      "rdfs:comment": "ベクター類似度検索とハイブリッドクエリ",
+      "dodaf:realizedBy": ["incdb:ComponentCore", "incdb:ComponentQuery"]
+    },
+    {
+      "@id": "incdb:CapabilityAPIService",
+      "@type": "dodaf:Capability",
+      "rdfs:label": "API Service",
+      "rdfs:comment": "gRPC と GraphQL API の提供",
+      "dodaf:realizedBy": ["incdb:ComponentAPI"]
+    },
+    {
+      "@id": "incdb:CapabilityCoinductiveReasoning",
+      "@type": "dodaf:Capability",
+      "rdfs:label": "Coinductive Reasoning",
+      "rdfs:comment": "無限構造の安全な推論",
+      "dodaf:realizedBy": ["incdb:ComponentCore", "incdb:ComponentQuery"]
+    }
+  ]
+}
+

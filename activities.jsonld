@@ -1,0 +1,46 @@
+{
+  "@context": {
+    "dodaf": "http://dodaf.mil/dodaf#",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "incdb": "http://example.org/incdb#"
+  },
+  "@graph": [
+    {
+      "@id": "incdb:ActivityStoreIncidence",
+      "@type": "dodaf:OperationalActivity",
+      "rdfs:label": "Store Incidence",
+      "rdfs:comment": "Incidence をストレージに保存",
+      "dodaf:performedBy": ["incdb:ComponentStorage"],
+      "dodaf:produces": ["incdb:StoredIncidence"]
+    },
+    {
+      "@id": "incdb:ActivityQueryIncidence",
+      "@type": "dodaf:OperationalActivity",
+      "rdfs:label": "Query Incidence",
+      "rdfs:comment": "Incidence パターンに基づくクエリ実行",
+      "dodaf:performedBy": ["incdb:ComponentQuery"],
+      "dodaf:consumes": ["incdb:QueryPattern"],
+      "dodaf:produces": ["incdb:QueryResult"]
+    },
+    {
+      "@id": "incdb:ActivityVectorSearch",
+      "@type": "dodaf:OperationalActivity",
+      "rdfs:label": "Vector Search",
+      "rdfs:comment": "ベクター類似度による検索",
+      "dodaf:performedBy": ["incdb:ComponentQuery"],
+      "dodaf:consumes": ["incdb:QueryVector"],
+      "dodaf:produces": ["incdb:SearchResults"]
+    },
+    {
+      "@id": "incdb:ActivityBisimulation",
+      "@type": "dodaf:OperationalActivity",
+      "rdfs:label": "Bisimulation Check",
+      "rdfs:comment": "Incidence 間の bisimulation 関係の計算",
+      "dodaf:performedBy": ["incdb:ComponentCore"],
+      "dodaf:consumes": ["incdb:IncidencePair"],
+      "dodaf:produces": ["incdb:BisimulationResult"]
+    }
+  ]
+}
+

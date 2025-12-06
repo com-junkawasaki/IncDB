@@ -1,0 +1,56 @@
+{
+  "@context": {
+    "prov": "http://www.w3.org/ns/prov#",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "incdb": "http://example.org/incdb#"
+  },
+  "@id": "incdb:Project",
+  "@type": "prov:Project",
+  "prov:wasStartedBy": {
+    "@id": "incdb:ProjectStart",
+    "@type": "prov:Activity",
+    "prov:startedAtTime": {
+      "@type": "xsd:dateTime",
+      "@value": "2024-01-01T00:00:00Z"
+    }
+  },
+  "rdfs:label": "IncDB Project",
+  "rdfs:comment": "Incidence-only Foundation を実装するグラフ+ベクターデータベースシステム",
+  "incdb:version": "0.1.0",
+  "incdb:status": "in_progress",
+  "incdb:components": [
+    {
+      "@id": "incdb:ComponentCore",
+      "rdfs:label": "incdb-core",
+      "rdfs:comment": "コアライブラリ（Incidence Foundation、WorldGraph）"
+    },
+    {
+      "@id": "incdb:ComponentStorage",
+      "rdfs:label": "incdb-storage",
+      "rdfs:comment": "ストレージ層（永続化、インデックス）"
+    },
+    {
+      "@id": "incdb:ComponentQuery",
+      "rdfs:label": "incdb-query",
+      "rdfs:comment": "クエリエンジン（Incidence Datalog、パターンマッチ）"
+    },
+    {
+      "@id": "incdb:ComponentAPI",
+      "rdfs:label": "incdb-api",
+      "rdfs:comment": "API層（gRPC/GraphQL）"
+    },
+    {
+      "@id": "incdb:ComponentCLI",
+      "rdfs:label": "incdb-cli",
+      "rdfs:comment": "CLIツール"
+    },
+    {
+      "@id": "incdb:ComponentWeb",
+      "rdfs:label": "incdb-web",
+      "rdfs:comment": "Web UI（SvelteKit）"
+    }
+  ]
+}
+

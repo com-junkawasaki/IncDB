@@ -1,0 +1,20 @@
+[package]
+name = "incdb-cli"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "incdb"
+path = "src/main.rs"
+
+[dependencies]
+incdb-core = { path = "../incdb-core" }
+incdb-storage = { path = "../incdb-storage" }
+incdb-query = { path = "../incdb-query" }
+incdb-api = { path = "../incdb-api" }
+tokio = { workspace = true }
+clap = { version = "4.0", features = ["derive"] }
+serde_json = { workspace = true }
+

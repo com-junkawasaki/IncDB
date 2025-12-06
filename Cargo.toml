@@ -1,0 +1,53 @@
+[workspace]
+members = [
+    "incdb-core",
+    "incdb-storage",
+    "incdb-query",
+    "incdb-api",
+    "incdb-cli",
+    "incdb-web",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["IncDB Contributors"]
+license = "MIT OR Apache-2.0"
+
+[workspace.dependencies]
+# Core dependencies
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+uuid = { version = "1.0", features = ["v4", "serde"] }
+
+# Foundation
+typed-arena = "2.0"
+bumpalo = "3.0"
+
+# Storage
+sled = "0.34"
+rocksdb = "0.21"
+
+# Vector search
+hnswlib-rs = "0.1"
+
+# API
+tonic = "0.11"
+tonic-web = "0.11"
+prost = "0.12"
+prost-types = "0.12"
+poem = "3.1"
+juniper = "0.15"
+juniper-from-schema = { git = "https://github.com/com-junkawasaki/juniper-from-schema.git" }
+
+# Web
+tokio = { version = "1.0", features = ["full"] }
+async-trait = "0.1"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+unused = "warn"
+

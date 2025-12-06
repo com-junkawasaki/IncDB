@@ -1,0 +1,59 @@
+{
+  "@context": {
+    "dodaf": "http://dodaf.mil/dodaf#",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "incdb": "http://example.org/incdb#"
+  },
+  "@id": "incdb:Engineering",
+  "@type": "dodaf:Engineering",
+  "rdfs:label": "IncDB Engineering Definition",
+  "rdfs:comment": "IncDB エンジニアリング定義",
+  "incdb:technologies": [
+    {
+      "@id": "incdb:TechRust",
+      "rdfs:label": "Rust",
+      "incdb:version": "1.70+",
+      "incdb:usage": "Core language"
+    },
+    {
+      "@id": "incdb:TechSled",
+      "rdfs:label": "sled",
+      "incdb:version": "0.34",
+      "incdb:usage": "Storage backend"
+    },
+    {
+      "@id": "incdb:TechTonic",
+      "rdfs:label": "tonic",
+      "incdb:version": "0.11",
+      "incdb:usage": "gRPC framework"
+    },
+    {
+      "@id": "incdb:TechPoem",
+      "rdfs:label": "Poem",
+      "incdb:version": "3.1",
+      "incdb:usage": "GraphQL framework"
+    },
+    {
+      "@id": "incdb:TechSvelteKit",
+      "rdfs:label": "SvelteKit",
+      "incdb:version": "2.x",
+      "incdb:usage": "Web framework"
+    }
+  ],
+  "incdb:buildSystem": {
+    "@id": "incdb:BuildCargo",
+    "rdfs:label": "Cargo",
+    "incdb:workspace": true
+  },
+  "incdb:testing": {
+    "@id": "incdb:TestStrategy",
+    "rdfs:label": "Test-Driven Development",
+    "incdb:levels": [
+      "Unit tests",
+      "Integration tests",
+      "Component tests"
+    ]
+  }
+}
+

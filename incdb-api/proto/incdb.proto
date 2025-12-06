@@ -1,0 +1,108 @@
+syntax = "proto3";
+
+package incdb;
+
+// IncDB gRPC Service
+service IncDBService {
+  // Incidence を追加
+  rpc AddIncidence(AddIncidenceRequest) returns (AddIncidenceResponse);
+  
+  // Incidence を取得
+  rpc GetIncidence(GetIncidenceRequest) returns (GetIncidenceResponse);
+  
+  // Incidence を検索
+  rpc QueryIncidence(QueryIncidenceRequest) returns (QueryIncidenceResponse);
+  
+  // ベクター検索
+  rpc VectorSearch(VectorSearchRequest) returns (VectorSearchResponse);
+}
+
+// AddIncidence Request
+message AddIncidenceRequest {
+  string id = 1;
+  uint32 level = 2;
+  optional string type_id = 3;
+  repeated string args = 4;
+  repeated uint32 roles = 5;
+  optional Value value = 6;
+  repeated float embedding = 7;
+}
+
+// AddIncidence Response
+message AddIncidenceResponse {
+  string id = 1;
+  bool success = 2;
+}
+
+// GetIncidence Request
+message GetIncidenceRequest {
+  string id = 1;
+}
+
+// GetIncidence Response
+message GetIncidenceResponse {
+  optional Incidence incidence = 1;
+}
+
+// QueryIncidence Request
+message QueryIncidenceRequest {
+  string query = 1; // Datalog またはパターンクエリ
+}
+
+// QueryIncidence Response
+message QueryIncidenceResponse {
+  repeated Incidence results = 1;
+}
+
+// VectorSearch Request
+message VectorSearchRequest {
+  repeated float query_vector = 1;
+  uint32 k = 2;
+  optional string type_filter = 3;
+  optional uint32 role_filter = 4;
+}
+
+// VectorSearch Response
+message VectorSearchResponse {
+  repeated VectorResult results = 1;
+}
+
+// VectorResult
+message VectorResult {
+  string id = 1;
+  float score = 2;
+}
+
+// Incidence
+message Incidence {
+  string id = 1;
+  uint32 level = 2;
+  optional string type_id = 3;
+  repeated string args = 4;
+  repeated uint32 roles = 5;
+  optional Value value = 6;
+  repeated float embedding = 7;
+}
+
+// Value
+message Value {
+  oneof value {
+    string str = 1;
+    int64 int = 2;
+    double float = 3;
+    bool bool = 4;
+    ValueList list = 5;
+    Vector vector = 6;
+  }
+}
+
+// ValueList
+message ValueList {
+  repeated Value values = 1;
+}
+
+// Vector
+message Vector {
+  repeated float values = 1;
+}
+

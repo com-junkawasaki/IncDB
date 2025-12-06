@@ -1,0 +1,13 @@
+[package]
+name = "incdb-query"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+incdb-core = { path = "../incdb-core" }
+incdb-storage = { path = "../incdb-storage" }
+thiserror = { workspace = true }
+serde = { workspace = true }
+

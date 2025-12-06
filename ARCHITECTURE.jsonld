@@ -1,0 +1,82 @@
+{
+  "@context": {
+    "dodaf": "http://dodaf.mil/dodaf#",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "incdb": "http://example.org/incdb#"
+  },
+  "@id": "incdb:Architecture",
+  "@type": "dodaf:Architecture",
+  "rdfs:label": "IncDB Architecture",
+  "rdfs:comment": "IncDB システムアーキテクチャ定義",
+  "dodaf:hasView": [
+    {
+      "@id": "incdb:ViewOV5b",
+      "@type": "dodaf:OV5b",
+      "rdfs:label": "Operational Activity Model",
+      "rdfs:comment": "運用活動モデル"
+    },
+    {
+      "@id": "incdb:ViewSV4",
+      "@type": "dodaf:SV4",
+      "rdfs:label": "System Function Model",
+      "rdfs:comment": "システム機能モデル"
+    },
+    {
+      "@id": "incdb:ViewSvcV4",
+      "@type": "dodaf:SvcV4",
+      "rdfs:label": "Service Function Model",
+      "rdfs:comment": "サービス機能モデル"
+    }
+  ],
+  "incdb:layers": [
+    {
+      "@id": "incdb:LayerCore",
+      "rdfs:label": "Core Layer",
+      "incdb:components": ["incdb:ComponentCore"]
+    },
+    {
+      "@id": "incdb:LayerStorage",
+      "rdfs:label": "Storage Layer",
+      "incdb:components": ["incdb:ComponentStorage"]
+    },
+    {
+      "@id": "incdb:LayerQuery",
+      "rdfs:label": "Query Layer",
+      "incdb:components": ["incdb:ComponentQuery"]
+    },
+    {
+      "@id": "incdb:LayerAPI",
+      "rdfs:label": "API Layer",
+      "incdb:components": ["incdb:ComponentAPI"]
+    },
+    {
+      "@id": "incdb:LayerClient",
+      "rdfs:label": "Client Layer",
+      "incdb:components": ["incdb:ComponentCLI", "incdb:ComponentWeb"]
+    }
+  ],
+  "incdb:designPrinciples": [
+    {
+      "@id": "incdb:PrincipleBorrowChecker",
+      "rdfs:label": "Rust Borrow Checker Utilization",
+      "rdfs:comment": "WorldGraph 中心設計で借用チェッカーを活用"
+    },
+    {
+      "@id": "incdb:PrincipleIncidenceOnly",
+      "rdfs:label": "Incidence-only Foundation",
+      "rdfs:comment": "すべての構造を Incidence のパターンとして定義"
+    },
+    {
+      "@id": "incdb:PrincipleCoinduction",
+      "rdfs:label": "Coinduction Support",
+      "rdfs:comment": "無限構造を安全に扱う"
+    },
+    {
+      "@id": "incdb:PrincipleVectorIntegration",
+      "rdfs:label": "Vector Integration",
+      "rdfs:comment": "構造検索とベクター検索のハイブリッド"
+    }
+  ]
+}
+
