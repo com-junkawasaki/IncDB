@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Paper from '$lib/paper/paper.mdx';
+	import Layout from '$lib/paper/layout.svelte';
 
 	let leanProofResults: string = '';
 
@@ -21,7 +22,9 @@
 </script>
 
 <div class="paper-page">
-	<Paper />
+	<Layout>
+		<Paper />
+	</Layout>
 
 	{#if leanProofResults}
 		<div id="lean-proofs" class="lean-proofs-section">
