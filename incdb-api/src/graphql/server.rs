@@ -2,16 +2,16 @@
 //!
 //! Poem を使用した GraphQL サーバーの起動
 
-use crate::graphql::schema::{create_schema, Context, Schema};
+use crate::graphql::schema::{create_schema, AppSchema};
+use async_graphql_poem::{GraphQLRequest, GraphQLResponse};
 use incdb_core::model::WorldGraph;
 use poem::{
     handler,
-    http::Method,
     listener::TcpListener,
     route,
     route::get,
     route::post,
-    web::{Data, Json, Query as WebQuery},
+    web::Data,
     EndpointExt, Server,
 };
 use std::sync::{Arc, Mutex};
@@ -25,13 +25,11 @@ impl GraphQLServer {
         addr: &str,
         graph: Arc<Mutex<WorldGraph>>,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let schema = create_schema();
-        let context = Context { graph };
+        let schema = create_schema(graph);
 
         let app = route()
             .at("/graphql", post(graphql_handler).get(graphql_playground))
-            .data(schema)
-            .data(context);
+            .data(schema);
 
         Server::new(TcpListener::bind(addr))
             .run(app)
@@ -44,12 +42,10 @@ impl GraphQLServer {
 /// GraphQL ハンドラー
 #[handler]
 async fn graphql_handler(
-    schema: Data<&Schema>,
-    context: Data<&Context>,
-    req: Json<juniper::http::GraphQLRequest>,
-) -> Json<juniper::http::GraphQLResponse> {
-    let res = req.execute(&schema, context.0);
-    Json(res)
+    schema: Data<&AppSchema>,
+    req: GraphQLRequest,
+) -> GraphQLResponse {
+    schema.execute(req.0).await.into()
 }
 
 /// GraphQL Playground ハンドラー
@@ -86,4 +82,3 @@ async fn graphql_playground() -> &'static str {
 </html>
 "#
 }
-

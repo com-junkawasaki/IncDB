@@ -1,41 +1,30 @@
 //! GraphQL Schema
 //!
-//! Juniper を使用した GraphQL スキーマ定義
+//! async-graphql を使用した GraphQL スキーマ定義
 
+use async_graphql::{Context, Object, Schema, EmptySubscription};
 use incdb_core::model::{IId, Incidence, Level, RoleId, Value, WorldGraph};
-use juniper::{EmptySubscription, FieldResult, RootNode};
 use std::sync::{Arc, Mutex};
-
-/// GraphQL Context
-pub struct Context {
-    pub graph: Arc<Mutex<WorldGraph>>,
-}
-
-impl juniper::Context for Context {}
 
 /// GraphQL Query
 pub struct Query;
 
-#[juniper::graphql_object(Context = Context)]
+#[Object]
 impl Query {
     /// Incidence を取得
-    fn incidence(context: &Context, id: String) -> FieldResult<Option<IncidenceType>> {
-        let graph = context.graph.lock().map_err(|e| {
-            juniper::FieldError::new("Failed to lock graph", juniper::Value::null())
-        })?;
+    async fn incidence(&self, ctx: &Context<'_>, id: String) -> async_graphql::Result<Option<IncidenceType>> {
+        let graph = ctx.data::<Arc<Mutex<WorldGraph>>>()?;
+        let graph = graph.lock().map_err(|e| async_graphql::Error::new(format!("Failed to lock graph: {}", e)))?;
 
-        let id = IId(id.parse().map_err(|_| {
-            juniper::FieldError::new("Invalid ID", juniper::Value::null())
-        })?);
+        let id = IId(id.parse().map_err(|_| async_graphql::Error::new("Invalid ID"))?);
 
         Ok(graph.get(id).map(|inc| IncidenceType::from(inc)))
     }
 
     /// すべての Incidence を取得
-    fn incidences(context: &Context) -> FieldResult<Vec<IncidenceType>> {
-        let graph = context.graph.lock().map_err(|e| {
-            juniper::FieldError::new("Failed to lock graph", juniper::Value::null())
-        })?;
+    async fn incidences(&self, ctx: &Context<'_>) -> async_graphql::Result<Vec<IncidenceType>> {
+        let graph = ctx.data::<Arc<Mutex<WorldGraph>>>()?;
+        let graph = graph.lock().map_err(|e| async_graphql::Error::new(format!("Failed to lock graph: {}", e)))?;
 
         let results: Vec<IncidenceType> = graph.iter().map(IncidenceType::from).collect();
         Ok(results)
@@ -45,46 +34,40 @@ impl Query {
 /// GraphQL Mutation
 pub struct Mutation;
 
-#[juniper::graphql_object(Context = Context)]
+#[Object]
 impl Mutation {
     /// Incidence を追加
-    fn add_incidence(
-        context: &Context,
+    async fn add_incidence(
+        &self,
+        ctx: &Context<'_>,
         id: Option<String>,
         level: i32,
         type_id: Option<String>,
-    ) -> FieldResult<IncidenceType> {
-        let mut graph = context.graph.lock().map_err(|e| {
-            juniper::FieldError::new("Failed to lock graph", juniper::Value::null())
-        })?;
+    ) -> async_graphql::Result<IncidenceType> {
+        let graph = ctx.data::<Arc<Mutex<WorldGraph>>>()?;
+        let mut graph = graph.lock().map_err(|e| async_graphql::Error::new(format!("Failed to lock graph: {}", e)))?;
 
         let id = if let Some(id_str) = id {
-            IId(id_str.parse().map_err(|_| {
-                juniper::FieldError::new("Invalid ID", juniper::Value::null())
-            })?)
+            IId(id_str.parse().map_err(|_| async_graphql::Error::new("Invalid ID"))?)
         } else {
             graph.new_id()
         };
 
         let level = Level(level as u8);
-        let incidence = Incidence::new(id, level);
+        let mut incidence = Incidence::new(id, level);
 
         if let Some(type_id_str) = type_id {
-            let type_id = IId(type_id_str.parse().map_err(|_| {
-                juniper::FieldError::new("Invalid type ID", juniper::Value::null())
-            })?);
-            let incidence = incidence.with_type(type_id);
-            graph.add_incidence(incidence.clone());
-            Ok(IncidenceType::from(&incidence))
-        } else {
-            graph.add_incidence(incidence.clone());
-            Ok(IncidenceType::from(&incidence))
+            let type_id = IId(type_id_str.parse().map_err(|_| async_graphql::Error::new("Invalid type ID"))?);
+            incidence = incidence.with_type(type_id);
         }
+
+        graph.add_incidence(incidence.clone());
+        Ok(IncidenceType::from(&incidence))
     }
 }
 
 /// Incidence GraphQL Type
-#[derive(juniper::GraphQLObject)]
+#[derive(async_graphql::SimpleObject, Clone)]
 pub struct IncidenceType {
     pub id: String,
     pub level: i32,
@@ -110,7 +93,7 @@ impl From<&Incidence> for IncidenceType {
 }
 
 /// Value GraphQL Type
-#[derive(juniper::GraphQLObject)]
+#[derive(async_graphql::SimpleObject, Clone)]
 pub struct ValueType {
     pub str: Option<String>,
     pub int: Option<i64>,
@@ -169,9 +152,10 @@ impl From<&Value> for ValueType {
 }
 
 /// GraphQL Schema を作成
-pub type Schema = RootNode<'static, Query, Mutation, EmptySubscription<Context>>;
+pub type AppSchema = Schema<Query, Mutation, EmptySubscription>;
 
-pub fn create_schema() -> Schema {
-    Schema::new(Query, Mutation, EmptySubscription::new())
+pub fn create_schema(graph: Arc<Mutex<WorldGraph>>) -> AppSchema {
+    Schema::build(Query, Mutation, EmptySubscription)
+        .data(graph)
+        .finish()
 }
-
