@@ -9,6 +9,11 @@ use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
 
 use crate::graphql::benchmark;
+use crate::graphql::{
+    WriteBenchmarkConfig, ReadBenchmarkConfig,
+    MultiHopBenchmarkConfig, VectorHopBenchmarkConfig,
+    BenchmarkResult,
+};
 
 /// GraphQL Query
 pub struct Query;
@@ -519,8 +524,8 @@ impl Mutation {
     async fn benchmark_write(
         &self,
         ctx: &Context<'_>,
-        config: benchmark::WriteBenchmarkConfig,
-    ) -> async_graphql::Result<benchmark::BenchmarkResult> {
+        config: WriteBenchmarkConfig,
+    ) -> async_graphql::Result<BenchmarkResult> {
         self.benchmark.benchmark_write(ctx, config).await
     }
 
@@ -528,8 +533,8 @@ impl Mutation {
     async fn benchmark_read(
         &self,
         ctx: &Context<'_>,
-        config: benchmark::ReadBenchmarkConfig,
-    ) -> async_graphql::Result<benchmark::BenchmarkResult> {
+        config: ReadBenchmarkConfig,
+    ) -> async_graphql::Result<BenchmarkResult> {
         self.benchmark.benchmark_read(ctx, config).await
     }
 
@@ -537,8 +542,8 @@ impl Mutation {
     async fn benchmark_multi_hop(
         &self,
         ctx: &Context<'_>,
-        config: benchmark::MultiHopBenchmarkConfig,
-    ) -> async_graphql::Result<benchmark::BenchmarkResult> {
+        config: MultiHopBenchmarkConfig,
+    ) -> async_graphql::Result<BenchmarkResult> {
         self.benchmark.benchmark_multi_hop(ctx, config).await
     }
 
@@ -546,8 +551,8 @@ impl Mutation {
     async fn benchmark_vector_hop(
         &self,
         ctx: &Context<'_>,
-        config: benchmark::VectorHopBenchmarkConfig,
-    ) -> async_graphql::Result<benchmark::BenchmarkResult> {
+        config: VectorHopBenchmarkConfig,
+    ) -> async_graphql::Result<BenchmarkResult> {
         self.benchmark.benchmark_vector_hop(ctx, config).await
     }
 
