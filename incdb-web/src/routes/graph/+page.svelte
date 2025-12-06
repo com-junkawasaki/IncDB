@@ -4,7 +4,7 @@
 	import { getGraphStructure, getIncidences } from '$lib/graphql/client';
 	import type { GraphQLGraphStructure } from '$lib/graphql/types';
 	import { convertToSvelteFlow } from '$lib/graph/utils';
-	import SvelteFlow, { Background, Controls, MiniMap } from '@xyflow/svelte';
+	import { SvelteFlow, Background, Controls, MiniMap } from '@xyflow/svelte';
 	import '@xyflow/svelte/dist/style.css';
 
 	let viewMode: 'force' | 'hierarchical' = 'force';

@@ -16,10 +16,30 @@
 	let Plotly: any = null;
 
 	onMount(async () => {
-		// クライアントサイドでのみ Plotly をインポート
+		// クライアントサイドでのみ Plotly を読み込み（CDN から）
 		if (browser) {
-			const plotlyModule = await import('plotly.js-dist-min');
-			Plotly = plotlyModule.default;
+			try {
+				// CDN から Plotly を読み込む
+				if (!(window as any).Plotly) {
+					const script = document.createElement('script');
+					script.src = 'https://cdn.plot.ly/plotly-2.27.1.min.js';
+					script.onload = () => {
+						Plotly = (window as any).Plotly;
+						console.log('Plotly loaded from CDN');
+					};
+					script.onerror = () => {
+						console.error('Failed to load Plotly from CDN');
+						error = 'Failed to load visualization library. Please check your internet connection.';
+					};
+					document.head.appendChild(script);
+				} else {
+					Plotly = (window as any).Plotly;
+					console.log('Plotly already loaded');
+				}
+			} catch (e) {
+				console.error('Failed to load Plotly:', e);
+				error = 'Failed to load visualization library.';
+			}
 		}
 
 		try {
