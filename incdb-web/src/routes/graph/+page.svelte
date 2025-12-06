@@ -1,9 +1,11 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import { getGraphStructure, getIncidences } from '$lib/graphql/client';
 	import type { GraphQLGraphStructure } from '$lib/graphql/types';
-	import { convertToVisNetwork, getNodeColor } from '$lib/graph/utils';
+	import { convertToSvelteFlow } from '$lib/graph/utils';
+	import SvelteFlow, { Background, Controls, MiniMap } from '@xyflow/svelte';
+	import '@xyflow/svelte/dist/style.css';
 
 	let viewMode: 'force' | 'hierarchical' = 'force';
 	let selectedIds: string[] = [];
@@ -11,45 +13,8 @@
 	let structure: GraphQLGraphStructure | null = null;
 	let loading = false;
 	let error: string | null = null;
-	let network: any = null;
-	let networkContainer: HTMLDivElement | null = null;
-	let Network: any = null;
-
-	onMount(async () => {
-		// クライアントサイドでのみ vis-network をインポート
-		if (browser) {
-			const visNetworkModule = await import('vis-network');
-			Network = visNetworkModule.Network;
-		}
-	});
-
-	onDestroy(() => {
-		if (network) {
-			network.destroy();
-		}
-	});
-
-	function initializeNetwork() {
-		if (!networkContainer || !structure || !Network) return;
-
-		const { nodes, edges } = convertToVisNetwork(structure.nodes, structure.edges);
-
-		const data = { nodes, edges };
-		const options = {
-			layout: {
-				hierarchical: viewMode === 'hierarchical',
-			},
-			physics: {
-				enabled: viewMode === 'force',
-			},
-			interaction: {
-				dragNodes: true,
-				zoomView: true,
-			},
-		};
-
-		network = new Network(networkContainer, data, options);
-	}
+	let nodes: any[] = [];
+	let edges: any[] = [];
 
 	async function loadGraph() {
 		if (selectedIds.length === 0) {
@@ -63,19 +28,14 @@
 
 		try {
 			structure = await getGraphStructure(selectedIds, depth);
-			if (networkContainer) {
-				initializeNetwork();
-			}
+			const converted = convertToSvelteFlow(structure.nodes, structure.edges);
+			nodes = converted.nodes;
+			edges = converted.edges;
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Unknown error';
+			console.error('Error loading graph:', e);
 		} finally {
 			loading = false;
-		}
-	}
-
-	function updateViewMode() {
-		if (structure && networkContainer) {
-			initializeNetwork();
 		}
 	}
 
@@ -96,16 +56,31 @@
 			
 			if (demoIds.length === 0) {
 				error = 'No demo data found. Please load crypto investigation data first.';
-				loading = false;
 				return;
 			}
-			
-			selectedIds = demoIds;
+
+			selectedIds = demoIds.slice(0, 20); // 最初の20個に制限
+			depth = 3;
 			await loadGraph();
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to load demo data';
+			error = e instanceof Error ? e.message : 'Unknown error';
+			console.error('Error loading demo data:', e);
+		} finally {
 			loading = false;
 		}
+	}
+
+	function handleIdsInput(e: Event) {
+		const target = e.target as HTMLInputElement;
+		selectedIds = target.value
+			.split(',')
+			.map((id) => id.trim())
+			.filter((id) => id.length > 0);
+	}
+
+	function handleDepthInput(e: Event) {
+		const target = e.target as HTMLInputElement;
+		depth = parseInt(target.value, 10) || 2;
 	}
 </script>
 
@@ -113,33 +88,28 @@
 	<h1>Graph Visualization</h1>
 	<p class="subtitle">Visualize incidence relationships</p>
 
-	<div class="graph-controls">
+	<div class="controls">
 		<div class="control-group">
 			<label>
 				<span>IDs (comma-separated)</span>
 				<input
 					type="text"
-					placeholder="1, 2, 3"
 					value={selectedIds.join(', ')}
-					oninput={(e) => {
-						selectedIds = (e.target as HTMLInputElement).value
-							.split(',')
-							.map((s) => s.trim())
-							.filter((s) => s.length > 0);
-					}}
+					oninput={handleIdsInput}
+					placeholder="4, 5, 6, 7"
 				/>
 			</label>
 		</div>
 		<div class="control-group">
 			<label>
 				<span>Depth</span>
-				<input type="number" bind:value={depth} min="1" max="5" />
+				<input type="number" value={depth} oninput={handleDepthInput} min="1" max="10" />
 			</label>
 		</div>
 		<div class="control-group">
 			<label>
 				<span>View Mode</span>
-				<select bind:value={viewMode} onchange={updateViewMode}>
+				<select bind:value={viewMode}>
 					<option value="force">Force-directed</option>
 					<option value="hierarchical">Hierarchical</option>
 				</select>
@@ -158,21 +128,25 @@
 	{/if}
 
 	{#if structure}
-		<div class="graph-info">
-			<div class="info-item">
-				<span class="info-label">Nodes:</span>
-				<span class="info-value">{structure.nodes.length}</span>
-			</div>
-			<div class="info-item">
-				<span class="info-label">Edges:</span>
-				<span class="info-value">{structure.edges.length}</span>
-			</div>
+		<div class="stats">
+			<span class="info-label">Nodes:</span>
+			<span class="info-value">{nodes.length}</span>
+			<span class="info-label">Edges:</span>
+			<span class="info-value">{edges.length}</span>
 		</div>
 	{/if}
 
 	<div class="graph-container">
-		{#if structure}
-			<div bind:this={networkContainer} class="network-canvas"></div>
+		{#if nodes.length > 0 && browser}
+			<SvelteFlow {nodes} {edges} class="svelte-flow">
+				<Background />
+				<Controls />
+				<MiniMap />
+			</SvelteFlow>
+		{:else if !browser}
+			<div class="empty-state">
+				<p>Loading...</p>
+			</div>
 		{:else}
 			<div class="empty-state">
 				<p>Enter IDs and click "Load Graph" to visualize</p>
@@ -183,24 +157,27 @@
 
 <style>
 	.graph-page {
-		max-width: 1400px;
-		margin: 0 auto;
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+		padding: 2rem;
+		max-width: 100%;
 	}
 
 	h1 {
 		font-size: 2rem;
-		font-weight: 600;
+		font-weight: 700;
 		color: #1d1d1f;
-		margin-bottom: 0.5rem;
+		margin: 0;
 	}
 
 	.subtitle {
 		font-size: 1rem;
 		color: #86868b;
-		margin-bottom: 2rem;
+		margin: 0;
 	}
 
-	.graph-controls {
+	.controls {
 		display: flex;
 		gap: 1rem;
 		margin-bottom: 1.5rem;
@@ -231,17 +208,28 @@
 		font-family: inherit;
 	}
 
-	.load-button {
+	.control-group input:focus,
+	.control-group select:focus {
+		outline: none;
+		border-color: #007aff;
+		box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+	}
+
+	.load-button,
+	.demo-button {
 		padding: 0.75rem 1.5rem;
-		background: #007aff;
-		color: #ffffff;
 		border: none;
 		border-radius: 8px;
 		font-size: 0.9375rem;
 		font-weight: 500;
 		cursor: pointer;
-		transition: background-color 0.2s;
-		height: fit-content;
+		transition: all 0.2s;
+		font-family: inherit;
+	}
+
+	.load-button {
+		background: #007aff;
+		color: #ffffff;
 	}
 
 	.load-button:hover:not(:disabled) {
@@ -254,17 +242,8 @@
 	}
 
 	.demo-button {
-		padding: 0.75rem 1.5rem;
 		background: #34c759;
 		color: #ffffff;
-		border: none;
-		border-radius: 8px;
-		font-size: 0.9375rem;
-		font-weight: 500;
-		cursor: pointer;
-		transition: background-color 0.2s;
-		height: fit-content;
-		margin-left: 0.5rem;
 	}
 
 	.demo-button:hover:not(:disabled) {
@@ -278,24 +257,19 @@
 
 	.error {
 		padding: 1rem;
-		background: #ffebee;
-		color: #ff3b30;
+		background: #ff3b30;
+		color: #ffffff;
 		border-radius: 8px;
-		margin-bottom: 1rem;
+		font-size: 0.9375rem;
 	}
 
-	.graph-info {
+	.stats {
 		display: flex;
-		gap: 2rem;
-		margin-bottom: 1rem;
-		padding: 1rem;
+		gap: 1rem;
+		padding: 0.75rem 1rem;
 		background: #f5f5f7;
 		border-radius: 8px;
-	}
-
-	.info-item {
-		display: flex;
-		gap: 0.5rem;
+		font-size: 0.875rem;
 	}
 
 	.info-label {
@@ -310,36 +284,26 @@
 	.graph-container {
 		background: #ffffff;
 		border-radius: 12px;
-		padding: 1rem;
+		padding: 0;
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 		min-height: 600px;
+		height: 70vh;
+		position: relative;
+		overflow: hidden;
 	}
 
-	.network-canvas {
+	:global(.svelte-flow) {
 		width: 100%;
-		height: 600px;
-		border: 1px solid #e5e5e7;
-		border-radius: 8px;
+		height: 100%;
 	}
 
 	.empty-state {
-		text-align: center;
-		padding: 4rem 2rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		height: 100%;
+		min-height: 400px;
 		color: #86868b;
-	}
-
-	@media (max-width: 768px) {
-		.graph-controls {
-			flex-direction: column;
-		}
-
-		.control-group {
-			min-width: 100%;
-		}
-
-		.network-canvas {
-			height: 400px;
-		}
+		font-size: 1rem;
 	}
 </style>
-

@@ -17,27 +17,55 @@ export interface GraphEdge {
 }
 
 /**
- * Convert GraphQL structure to vis-network format
+ * Convert GraphQL structure to SvelteFlow format
  */
-export function convertToVisNetwork(
+export function convertToSvelteFlow(
 	nodes: GraphQLGraphNode[],
 	edges: GraphQLGraphEdge[],
-): { nodes: GraphNode[]; edges: GraphEdge[] } {
-	const visNodes: GraphNode[] = nodes.map((node) => ({
-		id: node.id,
-		label: node.id,
-		level: node.level,
-		color: getNodeColor(node.level),
+): { nodes: any[]; edges: any[] } {
+	const svelteFlowNodes: any[] = nodes.map((node) => {
+		const label = node.value?.str || node.id;
+		const level = node.level || 0;
+		return {
+			id: node.id,
+			type: 'default',
+			position: { x: Math.random() * 800, y: Math.random() * 600 },
+			data: {
+				label: label,
+				level: level,
+				typeId: node.typeId || 'N/A'
+			},
+			style: {
+				background: getNodeColor(level),
+				color: '#1d1d1f',
+				border: `2px solid ${getNodeColor(level)}`,
+				borderRadius: '8px',
+				padding: '8px 12px',
+				fontSize: '14px',
+				fontWeight: 500
+			}
+		};
+	});
+
+	const svelteFlowEdges: any[] = edges.map((edge, index) => ({
+		id: `e${edge.from}-${edge.to}-${edge.role}-${index}`,
+		source: edge.from,
+		target: edge.to,
+		label: edge.role ? `R${edge.role}` : '',
+		type: 'smoothstep',
+		animated: false,
+		style: {
+			stroke: '#86868b',
+			strokeWidth: 2
+		},
+		labelStyle: {
+			fill: '#86868b',
+			fontSize: '12px',
+			fontWeight: 500
+		}
 	}));
 
-	const visEdges: GraphEdge[] = edges.map((edge) => ({
-		from: edge.from,
-		to: edge.to,
-		label: `R${edge.role}`,
-		arrows: 'to',
-	}));
-
-	return { nodes: visNodes, edges: visEdges };
+	return { nodes: svelteFlowNodes, edges: svelteFlowEdges };
 }
 
 /**

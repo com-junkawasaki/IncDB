@@ -13,15 +13,10 @@ export default defineConfig({
 		port: 5173
 	},
 	ssr: {
-		external: ['plotly.js-dist-min', 'monaco-editor', 'vis-network']
+		noExternal: ['@xyflow/svelte']
 	},
 	optimizeDeps: {
-		include: ['monaco-editor', 'plotly.js-dist-min', 'vis-network']
-	},
-	build: {
-		rollupOptions: {
-			external: ['plotly.js-dist-min', 'monaco-editor', 'vis-network']
-		}
+		include: ['monaco-editor', '@xyflow/svelte']
 	}
 });
 
