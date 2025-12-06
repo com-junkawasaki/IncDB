@@ -377,6 +377,10 @@ impl Mutation {
         id: Option<String>,
         level: i32,
         type_id: Option<String>,
+        args: Option<Vec<String>>,
+        roles: Option<Vec<i32>>,
+        value: Option<ValueInput>,
+        embedding: Option<Vec<f32>>,
     ) -> async_graphql::Result<IncidenceType> {
         let graph = ctx.data::<Arc<Mutex<WorldGraph>>>()?;
         let mut graph = graph.lock().map_err(|e| async_graphql::Error::new(format!("Failed to lock graph: {}", e)))?;
@@ -395,8 +399,108 @@ impl Mutation {
             incidence = incidence.with_type(type_id);
         }
 
+        // args と roles を追加
+        if let Some(args_vec) = args {
+            let roles_vec = roles.unwrap_or_default();
+            for (arg_str, role_val) in args_vec.iter().zip(roles_vec.iter()) {
+                let arg_id = IId(arg_str.parse().map_err(|_| async_graphql::Error::new("Invalid arg ID"))?);
+                let role = RoleId(*role_val as u32);
+                incidence = incidence.add_arg(arg_id, role);
+            }
+        }
+
+        // value を設定
+        if let Some(value_input) = value {
+            let val = match value_input {
+                ValueInput { str, int, float, bool, vector } => {
+                    if let Some(s) = str {
+                        Value::Str(s)
+                    } else if let Some(i) = int {
+                        Value::Int(i)
+                    } else if let Some(f) = float {
+                        Value::Float(f)
+                    } else if let Some(b) = bool {
+                        Value::Bool(b)
+                    } else if let Some(v) = vector {
+                        Value::Vector(v)
+                    } else {
+                        Value::Null
+                    }
+                }
+            };
+            incidence = incidence.with_val(val);
+        }
+
+        // embedding を設定
+        if let Some(emb) = embedding {
+            incidence = incidence.with_embedding(emb);
+        }
+
         graph.add_incidence(incidence.clone());
         Ok(IncidenceType::from(&incidence))
+    }
+
+    /// サンプルデータを投入
+    async fn load_sample_data(&self, ctx: &Context<'_>) -> async_graphql::Result<SampleDataResult> {
+        let graph = ctx.data::<Arc<Mutex<WorldGraph>>>()?;
+        let mut graph = graph.lock().map_err(|e| async_graphql::Error::new(format!("Failed to lock graph: {}", e)))?;
+
+        let mut created_ids = Vec::new();
+
+        // Type を作成
+        let person_type_id = graph.new_id();
+        let person_type = Incidence::new(person_type_id, Level::zero())
+            .with_val(Value::Str("Person".to_string()));
+        graph.add_incidence(person_type);
+        created_ids.push(person_type_id.0.to_string());
+
+        let company_type_id = graph.new_id();
+        let company_type = Incidence::new(company_type_id, Level::zero())
+            .with_val(Value::Str("Company".to_string()));
+        graph.add_incidence(company_type);
+        created_ids.push(company_type_id.0.to_string());
+
+        // Person インスタンスを作成
+        let person1_id = graph.new_id();
+        let person1 = Incidence::new(person1_id, Level::zero())
+            .with_type(person_type_id)
+            .with_val(Value::Str("Alice".to_string()))
+            .with_embedding(vec![0.1, 0.2, 0.3, 0.4, 0.5]);
+        graph.add_incidence(person1);
+        created_ids.push(person1_id.0.to_string());
+
+        let person2_id = graph.new_id();
+        let person2 = Incidence::new(person2_id, Level::zero())
+            .with_type(person_type_id)
+            .with_val(Value::Str("Bob".to_string()))
+            .with_embedding(vec![0.2, 0.3, 0.4, 0.5, 0.6]);
+        graph.add_incidence(person2);
+        created_ids.push(person2_id.0.to_string());
+
+        // Company インスタンスを作成
+        let company1_id = graph.new_id();
+        let company1 = Incidence::new(company1_id, Level::zero())
+            .with_type(company_type_id)
+            .with_val(Value::Str("Acme Corp".to_string()))
+            .add_arg(person1_id, RoleId(1))
+            .add_arg(person2_id, RoleId(1))
+            .with_embedding(vec![0.15, 0.25, 0.35, 0.45, 0.55]);
+        graph.add_incidence(company1);
+        created_ids.push(company1_id.0.to_string());
+
+        // 関係を作成（Person works_at Company）
+        let works_at_id = graph.new_id();
+        let works_at = Incidence::new(works_at_id, Level::zero())
+            .with_val(Value::Str("works_at".to_string()))
+            .add_arg(person1_id, RoleId(1))
+            .add_arg(company1_id, RoleId(2));
+        graph.add_incidence(works_at);
+        created_ids.push(works_at_id.0.to_string());
+
+        Ok(SampleDataResult {
+            created_count: created_ids.len(),
+            created_ids,
+        })
     }
 }
 
@@ -517,6 +621,23 @@ pub struct SchemaStats {
     pub type_count: usize,
     pub role_count: usize,
     pub vector_count: usize,
+}
+
+/// Value 入力
+#[derive(async_graphql::InputObject)]
+pub struct ValueInput {
+    pub str: Option<String>,
+    pub int: Option<i64>,
+    pub float: Option<f64>,
+    pub bool: Option<bool>,
+    pub vector: Option<Vec<f32>>,
+}
+
+/// サンプルデータ投入結果
+#[derive(async_graphql::SimpleObject, Clone)]
+pub struct SampleDataResult {
+    pub created_count: usize,
+    pub created_ids: Vec<String>,
 }
 
 /// Datalog クエリ結果

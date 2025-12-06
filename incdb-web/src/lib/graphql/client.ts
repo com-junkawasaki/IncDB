@@ -16,13 +16,25 @@ const GRAPHQL_URL = '/api/graphql';
 
 const client = new GraphQLClient(GRAPHQL_URL);
 
-export async function query<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
+export async function query<T>(queryStr: string, variables?: Record<string, unknown>): Promise<T> {
 	try {
-		return await client.request<T>(query, variables);
+		return await client.request<T>(queryStr, variables);
 	} catch (error) {
 		console.error('GraphQL query error:', error);
 		throw error;
 	}
+}
+
+export async function loadSampleData(): Promise<{ loadSampleData: { createdCount: number; createdIds: string[] } }> {
+	const queryStr = `
+		mutation {
+			loadSampleData {
+				createdCount
+				createdIds
+			}
+		}
+	`;
+	return query<{ loadSampleData: { createdCount: number; createdIds: string[] } }>(queryStr);
 }
 
 export async function getIncidences(): Promise<GraphQLIncidence[]> {
