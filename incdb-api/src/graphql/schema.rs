@@ -917,3 +917,9 @@ pub fn create_schema(graph: Arc<Mutex<WorldGraph>>) -> AppSchema {
         .data(graph)
         .finish()
 }
+
+// EventSourcedGraph用のスキーマで使用する型をエクスポート
+pub use IncidenceType;
+pub use ValueInput;
+pub use VectorSearchResult;
+pub use VectorSearchItem;

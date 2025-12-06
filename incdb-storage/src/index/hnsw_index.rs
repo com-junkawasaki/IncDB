@@ -1,13 +1,12 @@
 //! HNSW Vector Index
 //!
 //! hnsw_rsを使用したHNSWベースのベクトルインデックス
-//!
-//! NOTE: HNSW統合は進行中です。現在はSimpleVectorIndexを使用します。
 
 use crate::index::vector_index::{VectorIndex, VectorIndexError};
-// use hnsw_rs::{Hnsw, Searcher};  // TODO: HNSW API確認後に統合
+use hnsw_rs::prelude::*;
 use incdb_core::model::IId;
 use std::collections::HashMap;
+use std::sync::Mutex;
 use thiserror::Error;
 
 /// HNSWインデックスエラー
@@ -26,20 +25,19 @@ impl From<HNSWIndexError> for VectorIndexError {
 }
 
 /// HNSWベースのベクトルインデックス
-///
-/// TODO: HNSW API確認後に実装
-/// 現在はSimpleVectorIndexをラップして使用
 pub struct HNSWVectorIndex {
+    /// HNSWインデックス（Mutexで保護）
+    hnsw: Mutex<Hnsw<f32, DistL2>>,
     /// ベクトルID → インデックス内のID
-    id_to_index: HashMap<IId, usize>,
+    id_to_index: Mutex<HashMap<IId, usize>>,
     /// インデックス内のID → ベクトルID
-    index_to_id: HashMap<usize, IId>,
+    index_to_id: Mutex<HashMap<usize, IId>>,
     /// 次のインデックスID
-    next_index: usize,
+    next_index: Mutex<usize>,
     /// ベクトルの次元数
     dimension: usize,
-    // TODO: HNSWインデックスを追加
-    // hnsw: Hnsw<f32, DistL2>,
+    /// 検索時のefパラメータ
+    ef_search: usize,
 }
 
 impl HNSWVectorIndex {
@@ -49,19 +47,24 @@ impl HNSWVectorIndex {
     /// * `dimension` - ベクトルの次元数
     /// * `m` - HNSWパラメータM（各ノードの最大接続数、デフォルト16）
     /// * `ef_construction` - 構築時の探索幅（デフォルト200）
-    pub fn new(dimension: usize, _m: usize, _ef_construction: usize) -> Result<Self, HNSWIndexError> {
-        // TODO: HNSW API確認後に実装
+    /// * `ef_search` - 検索時の探索幅（デフォルト50）
+    pub fn new(dimension: usize, m: usize, ef_construction: usize, ef_search: usize) -> Result<Self, HNSWIndexError> {
+        let nb_layer = 16; // レイヤー数
+        let hnsw = Hnsw::<f32, DistL2>::new(m, dimension, nb_layer, ef_construction, DistL2);
+        
         Ok(Self {
-            id_to_index: HashMap::new(),
-            index_to_id: HashMap::new(),
-            next_index: 0,
+            hnsw: Mutex::new(hnsw),
+            id_to_index: Mutex::new(HashMap::new()),
+            index_to_id: Mutex::new(HashMap::new()),
+            next_index: Mutex::new(0),
             dimension,
+            ef_search,
         })
     }
 
     /// デフォルトパラメータで作成
     pub fn new_default(dimension: usize) -> Result<Self, HNSWIndexError> {
-        Self::new(dimension, 16, 200)
+        Self::new(dimension, 16, 200, 50)
     }
 }
 
@@ -74,35 +77,78 @@ impl VectorIndex for HNSWVectorIndex {
             }));
         }
 
-        // TODO: HNSW API確認後に実装
-        // 現在はマッピングのみ保存
-        let index = self.next_index;
-        self.next_index += 1;
-        self.id_to_index.insert(id, index);
-        self.index_to_id.insert(index, id);
+        // 既存のエントリを削除（マッピングのみ）
+        let mut id_to_index = self.id_to_index.lock().unwrap();
+        let mut index_to_id = self.index_to_id.lock().unwrap();
+        if let Some(&old_index) = id_to_index.get(&id) {
+            index_to_id.remove(&old_index);
+            id_to_index.remove(&id);
+        }
+
+        // 次のインデックスIDを取得
+        let mut next_index = self.next_index.lock().unwrap();
+        let index = *next_index;
+        *next_index += 1;
+
+        // HNSWにベクトルを追加
+        let mut hnsw = self.hnsw.lock().unwrap();
+        hnsw.insert((vector, index));
+
+        // マッピングを更新
+        id_to_index.insert(id, index);
+        index_to_id.insert(index, id);
 
         Ok(())
     }
 
     fn remove(&mut self, id: IId) -> Result<(), VectorIndexError> {
-        if let Some(index) = self.id_to_index.remove(&id) {
-            self.index_to_id.remove(&index);
+        // HNSWは削除をサポートしていないため、マッピングのみ削除
+        let mut id_to_index = self.id_to_index.lock().unwrap();
+        let mut index_to_id = self.index_to_id.lock().unwrap();
+        if let Some(index) = id_to_index.remove(&id) {
+            index_to_id.remove(&index);
         }
         Ok(())
     }
 
-    fn search(&self, _query: &[f32], _k: usize) -> Result<Vec<(IId, f32)>, VectorIndexError> {
-        // TODO: HNSW API確認後に実装
-        // 現在は空の結果を返す
-        Ok(Vec::new())
+    fn search(&self, query: &[f32], k: usize) -> Result<Vec<(IId, f32)>, VectorIndexError> {
+        if query.len() != self.dimension {
+            return Err(VectorIndexError::from(HNSWIndexError::DimensionMismatch {
+                expected: self.dimension,
+                actual: query.len(),
+            }));
+        }
+
+        // HNSWで検索
+        let hnsw = self.hnsw.lock().unwrap();
+        let ef_search = self.ef_search.max(k);
+        let results = hnsw.search(query, ef_search, k);
+
+        // 結果をIIdと類似度に変換
+        let index_to_id = self.index_to_id.lock().unwrap();
+        let mut result_vec = Vec::new();
+        
+        for (index, distance) in results {
+            if let Some(&id) = index_to_id.get(&index) {
+                // 距離を類似度に変換（負の距離 = 類似度、L2距離なので小さいほど類似）
+                // コサイン類似度に近づけるため、1 / (1 + distance)を使用
+                let similarity = 1.0 / (1.0 + distance);
+                result_vec.push((id, similarity));
+            }
+        }
+
+        // 類似度でソート（降順）
+        result_vec.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+
+        Ok(result_vec)
     }
 
     fn len(&self) -> usize {
-        self.id_to_index.len()
+        self.id_to_index.lock().unwrap().len()
     }
 
     fn is_empty(&self) -> bool {
-        self.id_to_index.is_empty()
+        self.id_to_index.lock().unwrap().is_empty()
     }
 }
 

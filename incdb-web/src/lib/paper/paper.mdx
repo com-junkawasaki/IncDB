@@ -387,10 +387,15 @@ These results show that the unified Incidence-only Foundation provides competiti
 
 **Limitations**:
 
-- Current vector index is simple (HNSW implementation planned)
 - Coinductive queries require depth limits for termination
 - Full Lean verification of all theorems is ongoing work
 - Write performance for very large datasets (>10M) needs optimization
+
+**Recent Improvements**:
+
+- **HNSW Integration**: HNSW (Hierarchical Navigable Small World) vector index has been fully integrated, providing O(log n) approximate nearest neighbor search performance. The implementation uses `hnsw_rs` library with configurable parameters (M=16, ef_construction=200, ef_search=50).
+- **Event Sourcing Architecture**: EventSourcedGraph implementation completed with temporal compression (10:1 ratio), snapshot store, and entity state management, enabling efficient storage and querying of large-scale temporal data.
+- **GraphQL Schema**: Complete GraphQL schema for EventSourcedGraph with support for time-range queries, entity traversal, and context-aware vector search.
 
 ### 6.6 Scalability and Cost Analysis
 

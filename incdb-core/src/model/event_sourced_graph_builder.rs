@@ -78,11 +78,10 @@ impl EventSourcedGraphBuilder {
         // エンティティ状態ストアを作成
         let entity_states = Arc::new(std::sync::Mutex::new(EntityStateStore::new(backend.clone())));
 
-        // ベクトルインデックスを作成（HNSW使用、API確認中はSimpleVectorIndexを使用）
-        use incdb_storage::index::vector_index::SimpleVectorIndex;
-        let base_index = Box::new(SimpleVectorIndex::new());
+        // ベクトルインデックスを作成（HNSW使用）
         let vector_index = Arc::new(std::sync::Mutex::new(
-            OptimizedVectorIndex::new(base_index, self.vector_dim),
+            OptimizedVectorIndex::new_hnsw(self.vector_dim)
+                .map_err(|e| format!("Failed to create HNSW index: {}", e))?,
         ));
 
         // EventSourcedGraphを作成

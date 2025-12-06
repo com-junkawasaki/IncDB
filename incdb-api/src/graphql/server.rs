@@ -3,6 +3,7 @@
 //! Poem を使用した GraphQL サーバーの起動
 
 use crate::graphql::schema::{create_schema, AppSchema};
+use crate::graphql::event_sourced_schema::{create_event_sourced_schema, EventSourcedAppSchema};
 use async_graphql_poem::{GraphQLRequest, GraphQLResponse};
 use incdb_core::model::{WorldGraph, EventSourcedGraph};
 use poem::{
@@ -38,19 +39,14 @@ impl GraphQLServer {
     }
 
     /// サーバーを起動（EventSourcedGraph使用）
-    /// 
-    /// NOTE: 現在はWorldGraphを使用します（EventSourcedGraph統合は進行中）
     pub async fn serve_event_sourced(
         addr: &str,
-        _graph: Arc<tokio::sync::Mutex<EventSourcedGraph>>,
+        graph: Arc<tokio::sync::Mutex<EventSourcedGraph>>,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        // TODO: EventSourcedGraph用のスキーマを作成
-        // 現在はWorldGraphを使用（後でEventSourcedGraph用のスキーマに置き換え）
-        let graph = Arc::new(Mutex::new(WorldGraph::new()));
-        let schema = create_schema(graph);
+        let schema = create_event_sourced_schema(graph);
 
         let app = Route::new()
-            .at("/graphql", post(graphql_handler).get(graphql_playground))
+            .at("/graphql", post(event_sourced_graphql_handler).get(graphql_playground))
             .at("/health", get(health_check))
             .data(schema);
 
@@ -62,10 +58,19 @@ impl GraphQLServer {
     }
 }
 
-/// GraphQL ハンドラー
+/// GraphQL ハンドラー（WorldGraph用）
 #[handler]
 async fn graphql_handler(
     schema: Data<&AppSchema>,
+    req: GraphQLRequest,
+) -> GraphQLResponse {
+    schema.execute(req.0).await.into()
+}
+
+/// GraphQL ハンドラー（EventSourcedGraph用）
+#[handler]
+async fn event_sourced_graphql_handler(
+    schema: Data<&EventSourcedAppSchema>,
     req: GraphQLRequest,
 ) -> GraphQLResponse {
     schema.execute(req.0).await.into()

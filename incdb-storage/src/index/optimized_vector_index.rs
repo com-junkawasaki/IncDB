@@ -64,6 +64,24 @@ impl OptimizedVectorIndex {
         })
     }
 
+    /// HNSWパラメータを指定して作成
+    pub fn new_hnsw_with_params(
+        dimension: usize,
+        m: usize,
+        ef_construction: usize,
+        ef_search: usize,
+    ) -> Result<Self, OptimizedVectorIndexError> {
+        use crate::index::hnsw_index::HNSWVectorIndex;
+        let base_index = Box::new(HNSWVectorIndex::new(dimension, m, ef_construction, ef_search)
+            .map_err(|e| OptimizedVectorIndexError::VectorIndex(VectorIndexError::Index(e.to_string())))?);
+        Ok(Self {
+            base_index,
+            contexts: HashMap::new(),
+            entity_to_vectors: HashMap::new(),
+            dimension,
+        })
+    }
+
     /// 新しい最適化ベクトルインデックスを作成（SimpleVectorIndex使用、後方互換性のため）
     pub fn new(base_index: Box<dyn VectorIndex>, dimension: usize) -> Self {
         Self {

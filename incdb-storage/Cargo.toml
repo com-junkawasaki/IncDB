@@ -28,3 +28,7 @@ tempfile = "3.8"
 [[example]]
 name = "storage_example"
 path = "../examples/storage_example.rs"
+
+[[example]]
+name = "hnsw_benchmark"
+path = "examples/hnsw_benchmark.rs"
