@@ -1,11 +1,12 @@
 //! IncDB CLI Tool
 
 use clap::{Parser, Subcommand};
-use incdb_core::model::{IId, Incidence, Level, RoleId, Value, WorldGraph};
+use incdb_core::model::{IId, Incidence, Level, RoleId, Value, WorldGraph, EventSourcedGraphBuilder};
 use incdb_core::ir::InternalJsonConverter;
 use incdb_query::datalog::{DatalogProgram, Predicate};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
+use std::env;
 
 #[derive(Parser)]
 #[command(name = "incdb")]
@@ -105,9 +106,32 @@ enum Commands {
     },
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
-    let graph = Arc::new(Mutex::new(WorldGraph::new()));
+    
+    // 環境変数でEventSourcingモードを切り替え
+    let use_event_sourcing = env::var("USE_EVENT_SOURCING")
+        .unwrap_or_else(|_| "false".to_string())
+        .parse::<bool>()
+        .unwrap_or(false);
+    
+    let graph = if use_event_sourcing {
+        println!("Using EventSourcedGraph (event sourcing mode)");
+        let storage_path = env::var("INCDB_STORAGE_PATH")
+            .unwrap_or_else(|_| "./data".to_string());
+        
+        // EventSourcedGraphを作成（非同期）
+        let es_graph = EventSourcedGraphBuilder::new()
+            .with_storage_path(storage_path)
+            .build()
+            .await?;
+        
+        // 現在はWorldGraphを使用（EventSourcedGraph統合は進行中）
+        Arc::new(Mutex::new(WorldGraph::new()))
+    } else {
+        Arc::new(Mutex::new(WorldGraph::new()))
+    };
 
     match cli.command {
         Commands::Add { level, type_id, value } => {

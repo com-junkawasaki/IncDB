@@ -38,10 +38,9 @@ pub struct QueryFilters {
 
 /// 最適化ベクトルインデックス
 ///
-/// 現在はSimpleVectorIndexをラップしてコンテキスト情報を追加
-/// 将来的にHNSWインデックスに置き換え可能
+/// HNSWベースのベクトルインデックスにコンテキスト情報を追加
 pub struct OptimizedVectorIndex {
-    /// ベクトルインデックス（現在はSimpleVectorIndex）
+    /// ベクトルインデックス（HNSWまたはSimpleVectorIndex）
     base_index: Box<dyn VectorIndex>,
     /// ベクトルID → コンテキスト情報
     contexts: HashMap<IId, VectorContext>,
@@ -52,7 +51,20 @@ pub struct OptimizedVectorIndex {
 }
 
 impl OptimizedVectorIndex {
-    /// 新しい最適化ベクトルインデックスを作成
+    /// 新しい最適化ベクトルインデックスを作成（HNSW使用）
+    pub fn new_hnsw(dimension: usize) -> Result<Self, OptimizedVectorIndexError> {
+        use crate::index::hnsw_index::HNSWVectorIndex;
+        let base_index = Box::new(HNSWVectorIndex::new_default(dimension)
+            .map_err(|e| OptimizedVectorIndexError::VectorIndex(VectorIndexError::Index(e.to_string())))?);
+        Ok(Self {
+            base_index,
+            contexts: HashMap::new(),
+            entity_to_vectors: HashMap::new(),
+            dimension,
+        })
+    }
+
+    /// 新しい最適化ベクトルインデックスを作成（SimpleVectorIndex使用、後方互換性のため）
     pub fn new(base_index: Box<dyn VectorIndex>, dimension: usize) -> Self {
         Self {
             base_index,

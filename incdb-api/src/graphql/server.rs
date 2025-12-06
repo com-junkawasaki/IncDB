@@ -4,7 +4,7 @@
 
 use crate::graphql::schema::{create_schema, AppSchema};
 use async_graphql_poem::{GraphQLRequest, GraphQLResponse};
-use incdb_core::model::WorldGraph;
+use incdb_core::model::{WorldGraph, EventSourcedGraph};
 use poem::{
     handler,
     listener::TcpListener,
@@ -18,11 +18,35 @@ use std::sync::{Arc, Mutex};
 pub struct GraphQLServer;
 
 impl GraphQLServer {
-    /// サーバーを起動
+    /// サーバーを起動（WorldGraph使用）
     pub async fn serve(
         addr: &str,
         graph: Arc<Mutex<WorldGraph>>,
     ) -> Result<(), Box<dyn std::error::Error>> {
+        let schema = create_schema(graph);
+
+        let app = Route::new()
+            .at("/graphql", post(graphql_handler).get(graphql_playground))
+            .at("/health", get(health_check))
+            .data(schema);
+
+        Server::new(TcpListener::bind(addr))
+            .run(app)
+            .await?;
+
+        Ok(())
+    }
+
+    /// サーバーを起動（EventSourcedGraph使用）
+    /// 
+    /// NOTE: 現在はWorldGraphを使用します（EventSourcedGraph統合は進行中）
+    pub async fn serve_event_sourced(
+        addr: &str,
+        _graph: Arc<tokio::sync::Mutex<EventSourcedGraph>>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        // TODO: EventSourcedGraph用のスキーマを作成
+        // 現在はWorldGraphを使用（後でEventSourcedGraph用のスキーマに置き換え）
+        let graph = Arc::new(Mutex::new(WorldGraph::new()));
         let schema = create_schema(graph);
 
         let app = Route::new()
