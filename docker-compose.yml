@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: incdb-api
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - RUST_LOG=info
+      - INCDB_DATA_DIR=/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: incdb-web
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8080
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    command: node index.js
+
+volumes:
+  data:
+    driver: local
+

@@ -26,6 +26,7 @@ impl GraphQLServer {
 
         let app = Route::new()
             .at("/graphql", poem::post(graphql_handler).get(graphql_playground))
+            .at("/health", poem::get(health_check))
             .data(schema);
 
         Server::new(TcpListener::bind(addr))
@@ -43,6 +44,12 @@ async fn graphql_handler(
     req: GraphQLRequest,
 ) -> GraphQLResponse {
     schema.execute(req.0).await.into()
+}
+
+/// ヘルスチェック
+#[handler]
+async fn health_check() -> &'static str {
+    "OK"
 }
 
 /// GraphQL Playground ハンドラー

@@ -1,0 +1,42 @@
+# IncDB API Server Dockerfile
+FROM rust:1.75-slim as builder
+
+WORKDIR /app
+
+# 依存関係のインストール
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# ワークスペースのコピー
+COPY Cargo.toml Cargo.lock ./
+COPY incdb-core ./incdb-core
+COPY incdb-storage ./incdb-storage
+COPY incdb-query ./incdb-query
+COPY incdb-api ./incdb-api
+
+# ビルド（API サーバーのみ）
+RUN cargo build --release --bin server -p incdb-api --no-default-features
+
+FROM debian:bookworm-slim
+
+WORKDIR /app
+
+# ランタイム依存関係
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# バイナリのコピー
+COPY --from=builder /app/target/release/server /app/incdb-api
+
+# データディレクトリ
+VOLUME ["/app/data"]
+
+EXPOSE 8080
+
+CMD ["./incdb-api"]
+

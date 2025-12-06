@@ -1,0 +1,13 @@
+target/
+node_modules/
+.git/
+.gitignore
+*.md
+docs/
+examples/
+tests/
+.vscode/
+.idea/
+*.log
+data/
+

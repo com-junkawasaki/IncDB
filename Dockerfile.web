@@ -1,0 +1,28 @@
+# IncDB Web UI Dockerfile
+FROM node:20-slim as builder
+
+WORKDIR /app
+
+# 依存関係のインストール
+COPY incdb-web/package.json incdb-web/package-lock.json* ./incdb-web/
+RUN cd incdb-web && npm ci
+
+# ソースのコピーとビルド
+COPY incdb-web ./incdb-web
+RUN cd incdb-web && npm run build
+
+FROM node:20-slim
+
+WORKDIR /app
+
+# ビルド成果物のコピー
+COPY --from=builder /app/incdb-web/build ./build
+COPY --from=builder /app/incdb-web/package.json ./
+COPY --from=builder /app/incdb-web/node_modules ./node_modules
+
+EXPOSE 5173
+
+# SvelteKit のビルド済みアプリを起動
+WORKDIR /app/build
+CMD ["node", "index.js"]
+
