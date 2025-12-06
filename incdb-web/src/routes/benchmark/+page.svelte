@@ -37,6 +37,18 @@
 	let results: any[] = [];
 	let loading = false;
 	let error: string | null = null;
+	
+	// 進捗表示
+	let progress = {
+		current: 0,
+		total: 0,
+		percentage: 0,
+		message: '',
+		elapsedTime: 0,
+		estimatedTime: 0
+	};
+	let progressInterval: any = null;
+	let startTime: number = 0;
 
 	// グラフデータ
 	let chartData: any = null;
@@ -92,9 +104,56 @@
 		}
 	}
 
+	function startProgress(total: number, message: string) {
+		progress = {
+			current: 0,
+			total: total,
+			percentage: 0,
+			message: message,
+			elapsedTime: 0,
+			estimatedTime: 0
+		};
+		startTime = Date.now();
+		
+		progressInterval = setInterval(() => {
+			const elapsed = (Date.now() - startTime) / 1000;
+			progress.elapsedTime = elapsed;
+			
+			// 進捗をシミュレート（実際の進捗は取得できないため、時間ベースで推定）
+			if (progress.total > 0) {
+				// 線形補間で進捗を推定（実際の処理速度に応じて調整）
+				const estimatedProgress = Math.min(95, (elapsed / (progress.total / 1000)) * 100);
+				progress.current = Math.floor((estimatedProgress / 100) * progress.total);
+				progress.percentage = estimatedProgress;
+				
+				if (progress.current > 0 && elapsed > 0) {
+					const rate = progress.current / elapsed;
+					const remaining = progress.total - progress.current;
+					progress.estimatedTime = remaining / rate;
+				}
+			}
+		}, 100);
+	}
+	
+	function stopProgress() {
+		if (progressInterval) {
+			clearInterval(progressInterval);
+			progressInterval = null;
+		}
+		progress = {
+			current: progress.total,
+			total: progress.total,
+			percentage: 100,
+			message: 'Completed',
+			elapsedTime: (Date.now() - startTime) / 1000,
+			estimatedTime: 0
+		};
+	}
+
 	async function runWriteBenchmark() {
 		loading = true;
 		error = null;
+		startProgress(writeConfig.dataSize, `Writing ${writeConfig.dataSize.toLocaleString()} incidences...`);
 
 		try {
 			const mutation = gql`
@@ -120,12 +179,14 @@
 					argsPerIncidence: writeConfig.argsPerIncidence
 				}
 			});
+			stopProgress();
 			results.push({
 				...result.benchmarkWrite,
 				timestamp: new Date().toISOString()
 			});
 			updateChart();
 		} catch (e) {
+			stopProgress();
 			error = e instanceof Error ? e.message : 'Unknown error';
 		} finally {
 			loading = false;
@@ -135,6 +196,7 @@
 	async function runReadBenchmark() {
 		loading = true;
 		error = null;
+		startProgress(readConfig.queryCount, `Reading ${readConfig.queryCount.toLocaleString()} queries...`);
 
 		try {
 			const mutation = gql`
@@ -158,12 +220,14 @@
 					queryCount: readConfig.queryCount
 				}
 			});
+			stopProgress();
 			results.push({
 				...result.benchmarkRead,
 				timestamp: new Date().toISOString()
 			});
 			updateChart();
 		} catch (e) {
+			stopProgress();
 			error = e instanceof Error ? e.message : 'Unknown error';
 		} finally {
 			loading = false;
@@ -173,6 +237,8 @@
 	async function runMultiHopBenchmark() {
 		loading = true;
 		error = null;
+		const totalOps = multiHopConfig.startNodes * multiHopConfig.depth * (multiHopConfig.avgEdges || 3);
+		startProgress(totalOps, `Multi-hop traversal: ${multiHopConfig.startNodes} nodes × depth ${multiHopConfig.depth}...`);
 
 		try {
 			const mutation = gql`
@@ -197,12 +263,14 @@
 					avgEdges: multiHopConfig.avgEdges
 				}
 			});
+			stopProgress();
 			results.push({
 				...result.benchmarkMultiHop,
 				timestamp: new Date().toISOString()
 			});
 			updateChart();
 		} catch (e) {
+			stopProgress();
 			error = e instanceof Error ? e.message : 'Unknown error';
 		} finally {
 			loading = false;
@@ -212,6 +280,8 @@
 	async function runVectorHopBenchmark() {
 		loading = true;
 		error = null;
+		const totalOps = vectorHopConfig.dataSize * vectorHopConfig.depth * vectorHopConfig.kPerHop;
+		startProgress(totalOps, `Vector hop search: ${vectorHopConfig.dataSize} vectors × depth ${vectorHopConfig.depth} × k=${vectorHopConfig.kPerHop}...`);
 
 		try {
 			const mutation = gql`
@@ -237,12 +307,14 @@
 					kPerHop: vectorHopConfig.kPerHop
 				}
 			});
+			stopProgress();
 			results.push({
 				...result.benchmarkVectorHop,
 				timestamp: new Date().toISOString()
 			});
 			updateChart();
 		} catch (e) {
+			stopProgress();
 			error = e instanceof Error ? e.message : 'Unknown error';
 		} finally {
 			loading = false;
@@ -337,6 +409,34 @@
 
 	{#if error}
 		<div class="error">Error: {error}</div>
+	{/if}
+
+	{#if loading && progress.total > 0}
+		<div class="progress-section">
+			<div class="progress-header">
+				<h3>{progress.message}</h3>
+				<span class="progress-percentage">{progress.percentage.toFixed(1)}%</span>
+			</div>
+			<div class="progress-bar-container">
+				<div class="progress-bar" style="width: {progress.percentage}%"></div>
+			</div>
+			<div class="progress-stats">
+				<div class="stat">
+					<span class="stat-label">Progress:</span>
+					<span class="stat-value">{progress.current.toLocaleString()} / {progress.total.toLocaleString()}</span>
+				</div>
+				<div class="stat">
+					<span class="stat-label">Elapsed:</span>
+					<span class="stat-value">{progress.elapsedTime.toFixed(1)}s</span>
+				</div>
+				{#if progress.estimatedTime > 0}
+					<div class="stat">
+						<span class="stat-label">Estimated:</span>
+						<span class="stat-value">{progress.estimatedTime.toFixed(1)}s</span>
+					</div>
+				{/if}
+			</div>
+		</div>
 	{/if}
 
 	<div class="benchmark-controls">
@@ -646,6 +746,72 @@
 
 	.results-table tr:hover {
 		background: #f5f5f7;
+	}
+
+	.progress-section {
+		background: white;
+		border: 1px solid #d2d2d7;
+		border-radius: 12px;
+		padding: 1.5rem;
+		margin-bottom: 2rem;
+	}
+
+	.progress-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 1rem;
+	}
+
+	.progress-header h3 {
+		font-size: 1.1rem;
+		color: #1d1d1f;
+		margin: 0;
+	}
+
+	.progress-percentage {
+		font-size: 1.2rem;
+		font-weight: 600;
+		color: #007aff;
+	}
+
+	.progress-bar-container {
+		width: 100%;
+		height: 24px;
+		background: #f5f5f7;
+		border-radius: 12px;
+		overflow: hidden;
+		margin-bottom: 1rem;
+	}
+
+	.progress-bar {
+		height: 100%;
+		background: linear-gradient(90deg, #007aff, #34c759);
+		transition: width 0.1s ease-out;
+		border-radius: 12px;
+	}
+
+	.progress-stats {
+		display: flex;
+		gap: 2rem;
+		flex-wrap: wrap;
+	}
+
+	.stat {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.stat-label {
+		font-size: 0.875rem;
+		color: #86868b;
+	}
+
+	.stat-value {
+		font-size: 1rem;
+		font-weight: 600;
+		color: #1d1d1f;
 	}
 </style>
 
