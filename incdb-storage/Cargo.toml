@@ -19,5 +19,9 @@ default = []
 rocksdb-backend = ["rocksdb"]
 
 [dev-dependencies]
-tokio = { workspace = true, features = ["test-util"] }
+tokio = { workspace = true, features = ["test-util", "rt", "rt-multi-thread", "macros"] }
 tempfile = "3.8"
+
+[[example]]
+name = "storage_example"
+path = "../examples/storage_example.rs"

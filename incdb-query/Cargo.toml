@@ -11,3 +11,7 @@ incdb-storage = { path = "../incdb-storage" }
 thiserror = { workspace = true }
 serde = { workspace = true }
 
+[[example]]
+name = "query_example"
+path = "../examples/query_example.rs"
+

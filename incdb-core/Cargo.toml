@@ -15,4 +15,10 @@ bumpalo = { workspace = true }
 
 [dev-dependencies]
 criterion = "0.5"
+tempfile = "3.8"
+incdb-query = { path = "../incdb-query" }
+
+[[example]]
+name = "basic_usage"
+path = "../examples/basic_usage.rs"
 
