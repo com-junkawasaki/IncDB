@@ -1,5 +1,5 @@
 # IncDB API Server Dockerfile
-FROM rust:1.75-slim as builder
+FROM rust:latest as builder
 
 WORKDIR /app
 
@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # ワークスペースのコピー
-COPY Cargo.toml Cargo.lock ./
+COPY Cargo.toml ./
 COPY incdb-core ./incdb-core
 COPY incdb-storage ./incdb-storage
 COPY incdb-query ./incdb-query

@@ -10,6 +10,7 @@ use poem::{
     listener::TcpListener,
     web::Data,
     EndpointExt, Route, Server,
+    get, post,
 };
 use std::sync::{Arc, Mutex};
 
@@ -25,8 +26,8 @@ impl GraphQLServer {
         let schema = create_schema(graph);
 
         let app = Route::new()
-            .at("/graphql", poem::post(graphql_handler).get(graphql_playground))
-            .at("/health", poem::get(health_check))
+            .at("/graphql", post(graphql_handler).get(graphql_playground))
+            .at("/health", get(health_check))
             .data(schema);
 
         Server::new(TcpListener::bind(addr))
