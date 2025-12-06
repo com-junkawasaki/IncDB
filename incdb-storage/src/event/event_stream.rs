@@ -172,7 +172,7 @@ impl EventStream {
 mod tests {
     use super::*;
     use crate::backend::sled_backend::SledBackend;
-    use incdb_core::model::{Event, EventType, Value};
+    use incdb_core::model::{Event, EventType, RoleId, Value};
     use tempfile::TempDir;
 
     #[tokio::test]
@@ -257,6 +257,69 @@ mod tests {
 
         let events = stream.events_for_entity(entity_id).await.unwrap();
         assert_eq!(events.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn test_event_with_related_entities_roundtrip() {
+        let temp_dir = TempDir::new().unwrap();
+        let backend = Arc::new(SledBackend::new(temp_dir.path()).unwrap());
+        let mut stream = EventStream::new(backend);
+
+        // related_entitiesを含むEventを作成
+        let event = Event::new(
+            IId(1),
+            1234567890000i64,
+            EventType::PersonCreated,
+            IId(2),
+            Value::string("John Doe"),
+        )
+        .add_related_entity(IId(3), RoleId(1))
+        .add_related_entity(IId(4), RoleId(2));
+
+        // 保存
+        stream.append(event.clone()).await.unwrap();
+
+        // 読み込み
+        let retrieved = stream.get(IId(1)).await.unwrap();
+
+        // 検証
+        assert_eq!(event.id, retrieved.id);
+        assert_eq!(event.related_entities.len(), retrieved.related_entities.len());
+        assert_eq!(event.related_entities, retrieved.related_entities);
+    }
+
+    #[tokio::test]
+    async fn test_incidence_to_event_to_incidence_roundtrip() {
+        use incdb_core::model::{Incidence, Level};
+
+        let temp_dir = TempDir::new().unwrap();
+        let backend = Arc::new(SledBackend::new(temp_dir.path()).unwrap());
+        let mut stream = EventStream::new(backend);
+
+        // Incidenceを作成（argsとrolesを含む）
+        let original_incidence = Incidence::new(IId(1), Level::zero())
+            .with_val(Value::string("Test"))
+            .add_arg(IId(2), RoleId(1))
+            .add_arg(IId(3), RoleId(2));
+
+        // Incidence -> Event
+        let event: Event = original_incidence.clone().into();
+        
+        // 保存
+        stream.append(event).await.unwrap();
+        
+        // 読み込み
+        let retrieved_event = stream.get(IId(1)).await.unwrap();
+        
+        // Event -> Incidence
+        let restored_incidence: Incidence = retrieved_event.into();
+
+        // 検証
+        assert_eq!(original_incidence.id, restored_incidence.id);
+        assert_eq!(original_incidence.args.len(), restored_incidence.args.len());
+        assert_eq!(original_incidence.roles.len(), restored_incidence.roles.len());
+        assert_eq!(original_incidence.args, restored_incidence.args);
+        assert_eq!(original_incidence.roles, restored_incidence.roles);
     }
 }
 

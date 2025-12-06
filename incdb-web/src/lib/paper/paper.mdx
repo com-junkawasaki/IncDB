@@ -414,14 +414,14 @@ We deployed IncDB on Fly.io cloud infrastructure to evaluate performance in a pr
 |-----------|------------|---------|-----------|---------------|
 | Write | **2,794 ops/sec** | 0.358ms | 1K incidences | Batch: 100, Vector dim: 128, Args: 2 |
 | Read | **2,630 ops/sec** | 0.380ms | 1K queries | Random lookups |
-| Multi-Hop | 0 hops/sec | N/A | 10 nodes, depth 3 | Graph traversal (limited by data structure) |
+| Multi-Hop | 0 hops/sec | N/A | 10 nodes, depth 3 | Graph traversal (args preservation issue in Event->Incidence conversion) |
 | Vector Hop | **505,050 searches/sec** | 0.002ms | 1K vectors, depth 3, k=10 | 128-dim embeddings |
 
 **Key Findings**:
 - Write performance: **2,794 ops/sec** on minimal cloud infrastructure (95% cost reduction vs. performance-4x)
 - Read performance: **2,630 ops/sec** with **0.380ms latency** demonstrates efficient EventSourcedGraph implementation
 - Vector search achieves exceptional throughput: **505,050 searches/sec** for small datasets
-- Multi-hop traversal shows limitations with current data structure; optimization needed for production workloads
+- Multi-hop traversal shows 0 hops/sec due to args preservation issue in Event->Incidence conversion; the benchmark successfully finds start nodes (10 nodes visited) but cannot traverse edges because args are not properly restored from the event stream. This is a known issue requiring investigation of the Event serialization/deserialization process.
 - Minimal configuration (`shared-cpu-1x`) provides sufficient performance for small to medium workloads
 
 **Cost Analysis** (as of December 2025):

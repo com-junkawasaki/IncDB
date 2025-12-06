@@ -2,9 +2,9 @@
   "write": {
     "operation": "write",
     "dataSize": 1000,
-    "durationMs": 357.865414,
-    "throughput": 2794.346591984438,
-    "latencyMs": 0.357865414,
+    "durationMs": 332.892926,
+    "throughput": 3003.9689098109584,
+    "latencyMs": 0.332892926,
     "metadata": [
       {
         "key": "batch_size",
@@ -22,10 +22,10 @@
   },
   "read": {
     "operation": "read",
-    "dataSize": 1000,
-    "durationMs": 0.76034,
-    "throughput": 2630.402188494621,
-    "latencyMs": 0.38017,
+    "dataSize": 2000,
+    "durationMs": 1.1704809999999999,
+    "throughput": 1708.6992441568896,
+    "latencyMs": 0.5852404999999999,
     "metadata": [
       {
         "key": "query_count",
@@ -39,8 +39,8 @@
   },
   "multi_hop": {
     "operation": "multi_hop",
-    "dataSize": 1000,
-    "durationMs": 0.0359,
+    "dataSize": 2000,
+    "durationMs": 0.03435,
     "throughput": 0.0,
     "latencyMs": 0.0,
     "metadata": [
@@ -64,10 +64,10 @@
   },
   "vector_hop": {
     "operation": "vector_hop",
-    "dataSize": 1,
-    "durationMs": 0.00594,
-    "throughput": 505050.50505050505,
-    "latencyMs": 0.00198,
+    "dataSize": 2,
+    "durationMs": 0.01619,
+    "throughput": 185299.5676343422,
+    "latencyMs": 0.005396666666666667,
     "metadata": [
       {
         "key": "vector_dim",
@@ -87,7 +87,7 @@
       },
       {
         "key": "total_hops",
-        "value": "3"
+        "value": "6"
       }
     ]
   }

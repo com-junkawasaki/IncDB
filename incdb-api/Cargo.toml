@@ -34,3 +34,7 @@ path = "src/bin/server.rs"
 [build-dependencies]
 tonic-build = { version = "0.11", optional = true }
 
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util", "rt", "rt-multi-thread", "macros"] }
+tempfile = "3.8"
+

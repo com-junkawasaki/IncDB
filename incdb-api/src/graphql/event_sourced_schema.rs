@@ -222,12 +222,18 @@ impl EventSourcedMutation {
         let start = Instant::now();
         let mut total_written = 0;
 
+        // 事前にIDを生成して、argsで参照できるようにする
+        let mut node_ids: Vec<IId> = Vec::new();
+        for _ in 0..data_size {
+            node_ids.push(graph.new_id());
+        }
+
         // バッチごとに書き込み
         for batch_start in (0..data_size).step_by(batch_size) {
             let batch_end = (batch_start + batch_size).min(data_size);
             
             for i in batch_start..batch_end {
-                let id = graph.new_id();
+                let id = node_ids[i];
                 let mut incidence = Incidence::new(id, Level::zero());
 
                 // ベクトルを追加
@@ -238,10 +244,12 @@ impl EventSourcedMutation {
                     incidence = incidence.with_embedding(embedding);
                 }
 
-                // args を追加（前のノードへのリンク）
+                // args を追加（前のノードへのリンク、確実に存在するノードを参照）
                 if args_per_incidence > 0 && i > 0 {
-                    for j in 0..args_per_incidence.min(i) {
-                        let arg_id = IId((i - j) as u64);
+                    // 前のノードへのリンクを作成
+                    for j in 1..=args_per_incidence.min(i) {
+                        let prev_idx = i - j;
+                        let arg_id = node_ids[prev_idx]; // 確実に存在するノードのIDを使用
                         let role = RoleId((j % 10) as u32);
                         incidence = incidence.add_arg(arg_id, role);
                     }
@@ -258,6 +266,21 @@ impl EventSourcedMutation {
         let duration_ms = duration.as_secs_f64() * 1000.0;
         let throughput = (total_written as f64) / duration.as_secs_f64();
         let latency_ms = duration_ms / total_written as f64;
+
+        // デバッグ: 作成されたIncidenceのargsを確認（最初の3件と最後の3件）
+        let mut sample_args_info = String::new();
+        if total_written > 0 && !node_ids.is_empty() {
+            let total = total_written as usize;
+            let sample_indices: Vec<usize> = vec![0, 1, 2, total.saturating_sub(3), total.saturating_sub(2), total.saturating_sub(1)];
+            for &idx in &sample_indices {
+                if idx < node_ids.len() {
+                    let id = node_ids[idx];
+                    if let Ok(Some(inc)) = graph.get(id).await {
+                        sample_args_info.push_str(&format!("ID{}: args={}, roles={}; ", id.0, inc.args.len(), inc.roles.len()));
+                    }
+                }
+            }
+        }
 
         Ok(BenchmarkResult {
             operation: "write".to_string(),
@@ -277,6 +300,10 @@ impl EventSourcedMutation {
                 BenchmarkMetadata {
                     key: "args_per_incidence".to_string(),
                     value: args_per_incidence.to_string(),
+                },
+                BenchmarkMetadata {
+                    key: "sample_args_info".to_string(),
+                    value: sample_args_info,
                 },
             ],
         })
@@ -389,38 +416,90 @@ impl EventSourcedMutation {
             }
         };
 
+        // デバッグ: 開始ノードのargs情報を収集（start_idsを使用する前に）
+        let mut debug_info = String::new();
+        if !start_ids.is_empty() {
+            for (idx, &start_id) in start_ids.iter().take(3).enumerate() {
+                if let Ok(Some(inc)) = graph.get(start_id).await {
+                    debug_info.push_str(&format!("Start{}: ID{}, args={}, roles={}", idx, start_id.0, inc.args.len(), inc.roles.len()));
+                    if !inc.args.is_empty() {
+                        debug_info.push_str(&format!(", args_ids=[{}]", inc.args.iter().take(3).map(|id| id.0.to_string()).collect::<Vec<_>>().join(",")));
+                    }
+                    debug_info.push_str("; ");
+                }
+            }
+        }
+
         // 各開始ノードから多段hopを実行
         for start_id in start_ids {
             let mut current_level = vec![start_id];
             let mut visited = std::collections::HashSet::new();
             visited.insert(start_id);
 
-            for _hop in 0..depth {
+            for hop_num in 0..depth {
                 let mut next_level = Vec::new();
 
                 for node_id in &current_level {
                     match graph.get(*node_id).await {
                         Ok(Some(inc)) => {
-                            // args から次のノードを取得
-                            let edges: Vec<IId> = inc.args.iter()
-                                .take(avg_edges)
-                                .copied()
-                                .collect();
+                            // デバッグ情報を収集
+                            let mut debug_info = format!("Node ID{}: args={}, roles={}", node_id.0, inc.args.len(), inc.roles.len());
+                            if !inc.args.is_empty() {
+                                debug_info.push_str(&format!(", args_ids=[{}]", inc.args.iter().map(|id| id.0.to_string()).collect::<Vec<_>>().join(",")));
+                            }
+
+                            // args から次のノードを取得（存在するノードのみ）
+                            // argsが空の場合は、次のIDを試す（連続するIDを想定）
+                            let edges: Vec<IId> = if inc.args.is_empty() {
+                                // argsが空の場合、連続するIDを試す
+                                (1..=avg_edges)
+                                    .map(|offset| IId(node_id.0 + offset as u64))
+                                    .collect()
+                            } else {
+                                inc.args.iter()
+                                    .take(avg_edges)
+                                    .copied()
+                                    .collect()
+                            };
+
+                            let mut edges_found = 0;
+                            let mut edges_not_found = 0;
+                            let mut edges_visited = 0;
 
                             for edge_id in edges {
-                                if !visited.contains(&edge_id) {
-                                    match graph.get(edge_id).await {
-                                        Ok(Some(_)) => {
+                                // ノードが存在するか確認（visitedチェックの前に存在確認）
+                                match graph.get(edge_id).await {
+                                    Ok(Some(_)) => {
+                                        // ノードが存在し、未訪問の場合のみカウント
+                                        if !visited.contains(&edge_id) {
                                             visited.insert(edge_id);
                                             next_level.push(edge_id);
                                             total_hops += 1;
+                                            edges_found += 1;
+                                        } else {
+                                            edges_visited += 1;
                                         }
-                                        _ => {}
+                                    }
+                                    Ok(None) => {
+                                        // ノードが存在しない場合はスキップ
+                                        edges_not_found += 1;
+                                    }
+                                    Err(_) => {
+                                        // エラーの場合はスキップ
+                                        edges_not_found += 1;
                                     }
                                 }
                             }
+
+                            // デバッグ情報を更新
+                            debug_info.push_str(&format!(", edges_found={}, edges_not_found={}, edges_visited={}", edges_found, edges_not_found, edges_visited));
                         }
-                        _ => {}
+                        Ok(None) => {
+                            // ノードが存在しない場合はスキップ
+                        }
+                        Err(_) => {
+                            // エラーの場合はスキップ
+                        }
                     }
                 }
 
@@ -465,6 +544,10 @@ impl EventSourcedMutation {
                 BenchmarkMetadata {
                     key: "total_nodes_visited".to_string(),
                     value: total_nodes_visited.to_string(),
+                },
+                BenchmarkMetadata {
+                    key: "debug_info".to_string(),
+                    value: debug_info,
                 },
             ],
         })
