@@ -3,7 +3,7 @@
 //! async-graphql を使用した GraphQL スキーマ定義
 
 use async_graphql::{Context, Object, Schema, EmptySubscription};
-use incdb_core::model::{IId, Incidence, Level, RoleId, Value, WorldGraph};
+use incdb_core::model::{IId, Incidence, Level, Value, WorldGraph};
 use std::sync::{Arc, Mutex};
 
 /// GraphQL Query

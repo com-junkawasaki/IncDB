@@ -2,6 +2,8 @@
 //!
 //! gRPC と GraphQL API
 
-pub mod grpc;
 pub mod graphql;
+
+#[cfg(feature = "grpc")]
+pub mod grpc;
 

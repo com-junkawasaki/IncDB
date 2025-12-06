@@ -13,8 +13,8 @@ path = "src/main.rs"
 incdb-core = { path = "../incdb-core" }
 incdb-storage = { path = "../incdb-storage" }
 incdb-query = { path = "../incdb-query" }
-incdb-api = { path = "../incdb-api" }
-tokio = { workspace = true }
+incdb-api = { path = "../incdb-api", default-features = false }
+# tokio = { workspace = true }  # 一時的に無効化（iconv リンクエラーのため）
 clap = { version = "4.0", features = ["derive"] }
 serde_json = { workspace = true }
 

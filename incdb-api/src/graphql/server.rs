@@ -8,11 +8,8 @@ use incdb_core::model::WorldGraph;
 use poem::{
     handler,
     listener::TcpListener,
-    route,
-    route::get,
-    route::post,
     web::Data,
-    EndpointExt, Server,
+    EndpointExt, Route, Server,
 };
 use std::sync::{Arc, Mutex};
 
@@ -27,8 +24,8 @@ impl GraphQLServer {
     ) -> Result<(), Box<dyn std::error::Error>> {
         let schema = create_schema(graph);
 
-        let app = route()
-            .at("/graphql", post(graphql_handler).get(graphql_playground))
+        let app = Route::new()
+            .at("/graphql", poem::post(graphql_handler).get(graphql_playground))
             .data(schema);
 
         Server::new(TcpListener::bind(addr))

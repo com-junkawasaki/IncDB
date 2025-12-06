@@ -6,11 +6,6 @@ use std::sync::{Arc, Mutex};
 use tonic::{Request, Response, Status};
 
 // プロトコルバッファの生成コード（build.rs で生成される）
-pub mod incdb {
-    tonic::include_proto!("incdb");
-}
-
-// プロトコルバッファの生成コード（build.rs で生成される）
 mod incdb {
     tonic::include_proto!("incdb");
 }

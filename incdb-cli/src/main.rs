@@ -4,7 +4,6 @@ use clap::{Parser, Subcommand};
 use incdb_core::model::{IId, Incidence, Level, RoleId, Value, WorldGraph};
 use incdb_core::ir::InternalJsonConverter;
 use std::sync::{Arc, Mutex};
-use tokio;
 
 #[derive(Parser)]
 #[command(name = "incdb")]
@@ -56,8 +55,7 @@ enum Commands {
     },
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
     let graph = Arc::new(Mutex::new(WorldGraph::new()));
 
