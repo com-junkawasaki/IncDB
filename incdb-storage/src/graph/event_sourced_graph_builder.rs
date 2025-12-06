@@ -2,12 +2,12 @@
 //!
 //! EventSourcedGraphを簡単に作成するためのビルダー
 
-use crate::model::EventSourcedGraph;
-use incdb_storage::backend::sled_backend::SledBackend;
-use incdb_storage::compression::{ProductQuantization, TemporalCompression};
-use incdb_storage::event::{EntityStateStore, EventStream, SnapshotStore};
-use incdb_storage::index::optimized_vector_index::OptimizedVectorIndex;
-use incdb_storage::index::vector_index::SimpleVectorIndex;
+use super::event_sourced_graph::EventSourcedGraph;
+use crate::backend::sled_backend::SledBackend;
+use crate::compression::{ProductQuantization, TemporalCompression};
+use crate::event::{EntityStateStore, EventStream, SnapshotStore};
+use crate::index::optimized_vector_index::OptimizedVectorIndex;
+use crate::index::vector_index::SimpleVectorIndex;
 use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;

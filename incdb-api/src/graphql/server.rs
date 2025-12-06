@@ -5,7 +5,8 @@
 use crate::graphql::schema::{create_schema, AppSchema};
 use crate::graphql::event_sourced_schema::{create_event_sourced_schema, EventSourcedAppSchema};
 use async_graphql_poem::{GraphQLRequest, GraphQLResponse};
-use incdb_core::model::{WorldGraph, EventSourcedGraph};
+use incdb_core::model::WorldGraph;
+use incdb_storage::graph::EventSourcedGraph;
 use poem::{
     handler,
     listener::TcpListener,

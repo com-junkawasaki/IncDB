@@ -27,7 +27,7 @@ impl From<HNSWIndexError> for VectorIndexError {
 /// HNSWベースのベクトルインデックス
 pub struct HNSWVectorIndex {
     /// HNSWインデックス（Mutexで保護）
-    hnsw: Mutex<Hnsw<f32, DistL2>>,
+    hnsw: Mutex<Hnsw<'static, f32, DistL2>>,
     /// ベクトルID → インデックス内のID
     id_to_index: Mutex<HashMap<IId, usize>>,
     /// インデックス内のID → ベクトルID
@@ -91,7 +91,7 @@ impl VectorIndex for HNSWVectorIndex {
         *next_index += 1;
 
         // HNSWにベクトルを追加
-        let mut hnsw = self.hnsw.lock().unwrap();
+        let hnsw = self.hnsw.lock().unwrap();
         hnsw.insert((vector, index));
 
         // マッピングを更新
@@ -128,7 +128,9 @@ impl VectorIndex for HNSWVectorIndex {
         let index_to_id = self.index_to_id.lock().unwrap();
         let mut result_vec = Vec::new();
         
-        for (index, distance) in results {
+        for neighbour in results {
+            let index = neighbour.d_id;
+            let distance = neighbour.distance;
             if let Some(&id) = index_to_id.get(&index) {
                 // 距離を類似度に変換（負の距離 = 類似度、L2距離なので小さいほど類似）
                 // コサイン類似度に近づけるため、1 / (1 + distance)を使用

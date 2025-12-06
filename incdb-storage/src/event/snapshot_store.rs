@@ -25,7 +25,7 @@ pub enum SnapshotStoreError {
 }
 
 /// エンティティ状態
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct EntityState {
     /// エンティティID
     pub entity_id: IId,
@@ -38,7 +38,7 @@ pub struct EntityState {
 }
 
 /// スナップショット
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Snapshot {
     /// スナップショットのタイムスタンプ
     pub timestamp: i64,

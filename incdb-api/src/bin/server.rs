@@ -3,7 +3,8 @@
 //! GraphQL サーバーを起動するためのバイナリ
 
 use incdb_api::graphql::GraphQLServer;
-use incdb_core::model::{WorldGraph, EventSourcedGraphBuilder};
+use incdb_core::model::WorldGraph;
+use incdb_storage::graph::EventSourcedGraphBuilder;
 use std::sync::{Arc, Mutex};
 use std::env;
 

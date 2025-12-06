@@ -17,7 +17,7 @@ pub enum CompressionError {
 }
 
 /// 圧縮されたイベント
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct CompressedEvents {
     /// タイムスタンプの差分エンコーディング
     pub timestamp_deltas: Vec<i64>,
@@ -32,6 +32,7 @@ pub struct CompressedEvents {
 }
 
 /// 時系列圧縮
+#[derive(Clone)]
 pub struct TemporalCompression {
     /// Delta Encodingを有効にするか
     delta_encoding: bool,

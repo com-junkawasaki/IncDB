@@ -2,7 +2,8 @@
 //!
 //! EventSourcedGraphとWorldGraphを統一的に扱うためのラッパー
 
-use crate::model::{EventSourcedGraph, IId, Incidence, Level, RoleId, WorldGraph};
+use incdb_core::model::{IId, Incidence, Level, RoleId, WorldGraph};
+use super::event_sourced_graph::EventSourcedGraph;
 use std::sync::{Arc, Mutex};
 use tokio::runtime::Runtime;
 
@@ -49,8 +50,9 @@ impl GraphWrapper {
                 if incidence.id.0 == 0 {
                     incidence.id = g.new_id();
                 }
+                let id = incidence.id;
                 g.add_incidence(incidence);
-                incidence.id
+                id
             }
             Self::EventSourcedGraph(graph) => {
                 // 非同期を同期に変換
@@ -60,7 +62,8 @@ impl GraphWrapper {
                     if incidence.id.0 == 0 {
                         incidence.id = g.new_id();
                     }
-                    g.add_incidence(incidence, None).await.unwrap_or(incidence.id)
+                    let id = incidence.id;
+                    g.add_incidence(incidence, None).await.unwrap_or(id)
                 })
             }
         }

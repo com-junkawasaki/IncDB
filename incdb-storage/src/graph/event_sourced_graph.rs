@@ -2,17 +2,17 @@
 //!
 //! イベントソーシングベースのWorldGraph代替
 
-use crate::foundation::axioms::{CoinductiveUniverse, Structure};
-use crate::model::{Event, IId, Incidence, Level, RoleId, Value};
-use incdb_storage::compression::{ProductQuantization, TemporalCompression};
-use incdb_storage::event::{
+use incdb_core::foundation::axioms::{CoinductiveUniverse, Structure};
+use incdb_core::model::{Event, IId, Incidence, Level, RoleId, Value};
+use crate::compression::{ProductQuantization, TemporalCompression};
+use crate::event::{
     EntityStateStore, EntityStateStoreError, EventStream, EventStreamError, SnapshotStore,
     SnapshotStoreError,
 };
-use incdb_storage::index::optimized_vector_index::{
+use crate::index::optimized_vector_index::{
     OptimizedVectorIndex, QueryFilters,
 };
-use incdb_storage::index::vector_index::SimpleVectorIndex;
+use crate::index::vector_index::SimpleVectorIndex;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use thiserror::Error;
@@ -194,7 +194,7 @@ impl EventSourcedGraph {
         let mut current_level = vec![entity_id];
         visited.insert(entity_id);
 
-        for depth in 0..max_depth {
+        for _depth in 0..max_depth {
             if current_level.is_empty() {
                 break;
             }
@@ -332,9 +332,8 @@ impl CoinductiveUniverse for EventSourcedGraph {
     fn structure(&self, id: IId) -> Option<Structure> {
         // 非同期メソッドを同期的に呼び出すため、tokio::runtimeを使用
         // 注意: これは簡易実装で、実際の実装では適切な非同期処理が必要
-        if let Ok(Some(incidence)) = tokio::runtime::Handle::try_current()
-            .and_then(|handle| handle.block_on(self.get(id)))
-        {
+        let handle = tokio::runtime::Handle::try_current().ok()?;
+        if let Ok(Some(incidence)) = handle.block_on(self.get(id)) {
             Some(Structure {
                 args: incidence.args,
                 val: incidence.val,
@@ -355,7 +354,7 @@ impl Default for EventSourcedGraph {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use incdb_storage::backend::sled_backend::SledBackend;
+    use crate::backend::sled_backend::SledBackend;
     use tempfile::TempDir;
 
     #[tokio::test]

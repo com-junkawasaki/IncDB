@@ -10,7 +10,7 @@ use std::sync::Arc;
 use thiserror::Error;
 
 /// エンティティタイプ
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum EntityType {
     /// 人物
     Person,
@@ -41,7 +41,7 @@ impl EntityType {
 }
 
 /// エンティティ状態
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct EntityState {
     /// エンティティID
     pub entity_id: IId,

@@ -3,7 +3,8 @@
 //! EventSourcedGraph用のGraphQLスキーマ
 
 use async_graphql::{Context, Object, Schema, EmptySubscription};
-use incdb_core::model::{IId, Incidence, Level, RoleId, Value, EventSourcedGraph};
+use incdb_core::model::{IId, Incidence, Level, RoleId, Value};
+use incdb_storage::graph::EventSourcedGraph;
 use incdb_storage::index::optimized_vector_index::QueryFilters;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -28,7 +29,7 @@ impl EventSourcedQuery {
         let id = IId(id.parse().map_err(|_| async_graphql::Error::new("Invalid ID"))?);
 
         match graph.get(id).await {
-            Ok(Some(inc)) => Ok(Some(IncidenceType::from(inc))),
+            Ok(Some(inc)) => Ok(Some(IncidenceType::from(&inc))),
             Ok(None) => Ok(None),
             Err(e) => Err(async_graphql::Error::new(format!("Failed to get incidence: {}", e))),
         }
@@ -41,7 +42,7 @@ impl EventSourcedQuery {
 
         match graph.iter().await {
             Ok(incidences) => {
-                let results: Vec<IncidenceType> = incidences.into_iter().map(IncidenceType::from).collect();
+                let results: Vec<IncidenceType> = incidences.iter().map(IncidenceType::from).collect();
                 Ok(results)
             }
             Err(e) => Err(async_graphql::Error::new(format!("Failed to get incidences: {}", e))),
@@ -59,11 +60,15 @@ impl EventSourcedQuery {
         let graph = ctx.data::<Arc<Mutex<EventSourcedGraph>>>()?;
         let graph = graph.lock().await;
 
-        let entity_filter = entity_id.map(|s| IId(s.parse().map_err(|_| async_graphql::Error::new("Invalid entity ID"))?));
+        let entity_filter = if let Some(s) = entity_id {
+            Some(IId(s.parse().map_err(|_| async_graphql::Error::new("Invalid entity ID"))?))
+        } else {
+            None
+        };
 
         match graph.query_time_range(start, end, entity_filter).await {
             Ok(incidences) => {
-                let results: Vec<IncidenceType> = incidences.into_iter().map(IncidenceType::from).collect();
+                let results: Vec<IncidenceType> = incidences.iter().map(IncidenceType::from).collect();
                 Ok(results)
             }
             Err(e) => Err(async_graphql::Error::new(format!("Failed to query time range: {}", e))),
@@ -103,7 +108,11 @@ impl EventSourcedQuery {
 
         let filters = QueryFilters {
             time_range: time_range_start.zip(time_range_end).map(|(s, e)| (s, e)),
-            entity_filter: entity_filter.map(|s| IId(s.parse().map_err(|_| async_graphql::Error::new("Invalid entity ID"))?)),
+            entity_filter: if let Some(s) = entity_filter {
+                Some(IId(s.parse().map_err(|_| async_graphql::Error::new("Invalid entity ID"))?))
+            } else {
+                None
+            },
         };
 
         match graph.vector_search(query_vector, k, filters).await {
@@ -114,7 +123,7 @@ impl EventSourcedQuery {
                     match graph.get(id).await {
                         Ok(Some(inc)) => {
                             items.push(VectorSearchItem {
-                                incidence: IncidenceType::from(inc),
+                                incidence: IncidenceType::from(&inc),
                                 similarity,
                             });
                         }
@@ -187,7 +196,7 @@ impl EventSourcedMutation {
         }
 
         match graph.add_incidence(incidence.clone(), None).await {
-            Ok(_) => Ok(IncidenceType::from(incidence)),
+            Ok(_) => Ok(IncidenceType::from(&incidence)),
             Err(e) => Err(async_graphql::Error::new(format!("Failed to add incidence: {}", e))),
         }
     }
@@ -239,10 +248,8 @@ impl EventSourcedMutation {
     }
 }
 
-// 既存のschema.rsから型定義をインポート
-use crate::graphql::schema::{
-    IncidenceType, ValueInput, VectorSearchResult, VectorSearchItem,
-};
+// 既存のschema.rsから型定義をインポート（既にpubなので直接使用可能）
+use crate::graphql::schema::{IncidenceType, ValueInput, VectorSearchResult, VectorSearchItem};
 
 fn convert_value_input(input: ValueInput) -> async_graphql::Result<Value> {
     if let Some(s) = input.str {
@@ -263,7 +270,7 @@ fn convert_value_input(input: ValueInput) -> async_graphql::Result<Value> {
 /// EventSourcedGraph用のGraphQL Schema
 pub type EventSourcedAppSchema = Schema<EventSourcedQuery, EventSourcedMutation, EmptySubscription>;
 
-pub fn create_event_sourced_schema(graph: Arc<Mutex<EventSourcedGraph>>) -> EventSourcedAppSchema {
+pub fn create_event_sourced_schema(graph: Arc<tokio::sync::Mutex<EventSourcedGraph>>) -> EventSourcedAppSchema {
     Schema::build(EventSourcedQuery, EventSourcedMutation::default(), EmptySubscription)
         .data(graph)
         .finish()

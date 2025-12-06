@@ -1,7 +1,8 @@
 //! IncDB CLI Tool
 
 use clap::{Parser, Subcommand};
-use incdb_core::model::{IId, Incidence, Level, RoleId, Value, WorldGraph, EventSourcedGraphBuilder, GraphWrapper};
+use incdb_core::model::{IId, Incidence, Level, RoleId, Value, WorldGraph};
+use incdb_storage::graph::{EventSourcedGraphBuilder, GraphWrapper};
 use incdb_core::ir::InternalJsonConverter;
 use incdb_query::datalog::{DatalogProgram, Predicate};
 use std::sync::{Arc, Mutex};

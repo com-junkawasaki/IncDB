@@ -18,7 +18,7 @@ pub enum PQError {
 /// コードブック
 ///
 /// 各サブベクトル空間の代表ベクトル集合
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Codebook {
     /// コードブックのベクトル（k個の代表ベクトル）
     vectors: Vec<Vec<f32>>,
@@ -73,7 +73,7 @@ impl Codebook {
 /// 量子化されたベクトル
 ///
 /// 各サブベクトルがコードブックのインデックスで表現される
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct QuantizedVector {
     /// 各サブベクトルのコードブックインデックス（m個）
     codes: Vec<u8>,
@@ -106,6 +106,7 @@ impl QuantizedVector {
 /// Product Quantization
 ///
 /// ベクトルを複数のサブベクトルに分割し、各サブベクトルをコードブックで量子化
+#[derive(Clone)]
 pub struct ProductQuantization {
     /// コードブック（各サブベクトル空間用）
     codebooks: Vec<Codebook>,

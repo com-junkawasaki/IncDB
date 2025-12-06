@@ -6,4 +6,5 @@ pub mod backend;
 pub mod index;
 pub mod event;
 pub mod compression;
+pub mod graph;
 
