@@ -9,6 +9,7 @@ license.workspace = true
 incdb-core = { path = "../incdb-core" }
 incdb-storage = { path = "../incdb-storage" }
 incdb-query = { path = "../incdb-query" }
+thiserror = { workspace = true }
 tonic = { workspace = true, optional = true }
 tonic-web = { workspace = true, optional = true }
 prost = { workspace = true, optional = true }

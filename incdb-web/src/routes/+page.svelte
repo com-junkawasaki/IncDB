@@ -1,244 +1,191 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { getSchemaStats } from '$lib/graphql/client';
+	import type { GraphQLSchemaStats } from '$lib/graphql/types';
 
-	let incidences: any[] = [];
-	let loading = false;
+	let stats: GraphQLSchemaStats | null = null;
+	let loading = true;
 	let error: string | null = null;
-	let serverStatus = 'unknown';
 
-	async function fetchIncidences() {
-		loading = true;
-		error = null;
+	onMount(async () => {
 		try {
-			const response = await fetch('/api/graphql', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					query: `
-						query {
-							incidences {
-								id
-								level
-								typeId
-								args
-								roles
-								value {
-									str
-									int
-									float
-									bool
-								}
-							}
-						}
-					`,
-				}),
-			});
-			
-			if (response.ok) {
-				const data = await response.json();
-				if (data.errors) {
-					error = data.errors[0].message;
-					serverStatus = 'error';
-				} else {
-					incidences = data.data?.incidences || [];
-					serverStatus = 'connected';
-				}
-			} else {
-				// GraphQL サーバーが起動していない場合はモックデータを表示
-				incidences = [
-					{ id: '1', level: 0, typeId: null, args: [], roles: [], value: { str: 'Hello' } },
-					{ id: '2', level: 0, typeId: '10', args: ['1'], roles: [1], value: { int: 42 } },
-				];
-				serverStatus = 'mock';
-			}
+			stats = await getSchemaStats();
 		} catch (e) {
-			// エラー時もモックデータを表示
-			incidences = [
-				{ id: '1', level: 0, typeId: null, args: [], roles: [], value: { str: 'Hello' } },
-				{ id: '2', level: 0, typeId: '10', args: ['1'], roles: [1], value: { int: 42 } },
-			];
-			serverStatus = 'mock';
-			console.warn('GraphQL server not available, showing mock data:', e);
+			error = e instanceof Error ? e.message : 'Unknown error';
 		} finally {
 			loading = false;
 		}
-	}
-
-	function getStatusColor() {
-		switch (serverStatus) {
-			case 'connected':
-				return '#4caf50';
-			case 'mock':
-				return '#ff9800';
-			case 'error':
-				return '#f44336';
-			default:
-				return '#757575';
-		}
-	}
-
-	function getStatusText() {
-		switch (serverStatus) {
-			case 'connected':
-				return 'Connected to GraphQL server';
-			case 'mock':
-				return 'Using mock data (GraphQL server not available)';
-			case 'error':
-				return 'GraphQL server error';
-			default:
-				return 'Unknown status';
-		}
-	}
-
-	onMount(() => {
-		fetchIncidences();
 	});
 </script>
 
-<div class="container">
-	<h1>IncDB</h1>
-	<p>Incidence-only Foundation Database</p>
-	
-	<div class="status" style="background-color: {getStatusColor()}20; border-color: {getStatusColor()}">
-		<span class="status-dot" style="background-color: {getStatusColor()}"></span>
-		<span>{getStatusText()}</span>
-	</div>
+<div class="home">
+	<h1>IncDB Dashboard</h1>
+	<p class="subtitle">Incidence-only Foundation Database</p>
 
 	{#if loading}
-		<p class="loading">Loading...</p>
+		<div class="loading">Loading...</div>
 	{:else if error}
-		<p class="error">Error: {error}</p>
-	{:else}
-		<div class="incidences">
-			<h2>Incidences ({incidences.length})</h2>
-			{#each incidences as incidence}
-				<div class="incidence">
-					<h3>ID: {incidence.id}</h3>
-					<p>Level: {incidence.level}</p>
-					{#if incidence.typeId}
-						<p>Type: {incidence.typeId}</p>
-					{/if}
-					{#if incidence.args && incidence.args.length > 0}
-						<p>Args: {incidence.args.join(', ')}</p>
-					{/if}
-					{#if incidence.roles && incidence.roles.length > 0}
-						<p>Roles: {incidence.roles.join(', ')}</p>
-					{/if}
-					{#if incidence.value}
-						<div class="value">
-							<p>Value:</p>
-							<ul>
-								{#if incidence.value.str}
-									<li>String: {incidence.value.str}</li>
-								{/if}
-								{#if incidence.value.int !== null && incidence.value.int !== undefined}
-									<li>Int: {incidence.value.int}</li>
-								{/if}
-								{#if incidence.value.float !== null && incidence.value.float !== undefined}
-									<li>Float: {incidence.value.float}</li>
-								{/if}
-								{#if incidence.value.bool !== null && incidence.value.bool !== undefined}
-									<li>Bool: {incidence.value.bool}</li>
-								{/if}
-							</ul>
-						</div>
-					{/if}
-				</div>
-			{:else}
-				<p class="empty">No incidences found</p>
-			{/each}
+		<div class="error">Error: {error}</div>
+	{:else if stats}
+		<div class="stats-grid">
+			<div class="stat-card">
+				<div class="stat-value">{stats.totalIncidences}</div>
+				<div class="stat-label">Total Incidences</div>
+			</div>
+			<div class="stat-card">
+				<div class="stat-value">{stats.typeCount}</div>
+				<div class="stat-label">Types</div>
+			</div>
+			<div class="stat-card">
+				<div class="stat-value">{stats.roleCount}</div>
+				<div class="stat-label">Roles</div>
+			</div>
+			<div class="stat-card">
+				<div class="stat-value">{stats.vectorCount}</div>
+				<div class="stat-label">Vectors</div>
+			</div>
+		</div>
+
+		<div class="quick-actions">
+			<h2>Quick Actions</h2>
+			<div class="actions-grid">
+				<a href="/schema" class="action-card">
+					<span class="action-icon">📋</span>
+					<span class="action-label">View Schema</span>
+				</a>
+				<a href="/query" class="action-card">
+					<span class="action-icon">🔍</span>
+					<span class="action-label">Run Query</span>
+				</a>
+				<a href="/graph" class="action-card">
+					<span class="action-icon">🕸️</span>
+					<span class="action-label">Visualize Graph</span>
+				</a>
+				<a href="/vector" class="action-card">
+					<span class="action-icon">📊</span>
+					<span class="action-label">Vector Analysis</span>
+				</a>
+			</div>
 		</div>
 	{/if}
 </div>
 
 <style>
-	.container {
+	.home {
 		max-width: 1200px;
 		margin: 0 auto;
-		padding: 2rem;
 	}
 
 	h1 {
-		color: #333;
+		font-size: 2.5rem;
+		font-weight: 600;
+		color: #1d1d1f;
 		margin-bottom: 0.5rem;
 	}
 
-	.status {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.5rem 1rem;
-		border-radius: 4px;
-		border: 1px solid;
-		margin: 1rem 0;
-		font-size: 0.9rem;
+	.subtitle {
+		font-size: 1.125rem;
+		color: #86868b;
+		margin-bottom: 2rem;
 	}
 
-	.status-dot {
-		width: 8px;
-		height: 8px;
-		border-radius: 50%;
-	}
-
-	.loading {
-		color: #666;
-		font-style: italic;
+	.loading,
+	.error {
+		padding: 2rem;
+		text-align: center;
+		color: #86868b;
 	}
 
 	.error {
-		color: #f44336;
-		padding: 1rem;
+		color: #ff3b30;
 		background: #ffebee;
-		border-radius: 4px;
-	}
-
-	.incidences {
-		margin-top: 2rem;
-	}
-
-	.incidence {
-		border: 1px solid #ddd;
 		border-radius: 8px;
+	}
+
+	.stats-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+		gap: 1.5rem;
+		margin-bottom: 3rem;
+	}
+
+	.stat-card {
+		background: #ffffff;
+		border-radius: 12px;
 		padding: 1.5rem;
-		margin-bottom: 1rem;
-		background: #f9f9f9;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-	}
-
-	.incidence h3 {
-		margin-top: 0;
-		color: #555;
-		border-bottom: 2px solid #ddd;
-		padding-bottom: 0.5rem;
-	}
-
-	.incidence p {
-		margin: 0.5rem 0;
-		color: #666;
-	}
-
-	.value {
-		margin-top: 1rem;
-		padding: 1rem;
-		background: #fff;
-		border-radius: 4px;
-		border-left: 3px solid #4caf50;
-	}
-
-	.value ul {
-		margin: 0.5rem 0 0 1.5rem;
-	}
-
-	.value li {
-		margin: 0.25rem 0;
-	}
-
-	.empty {
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 		text-align: center;
-		color: #999;
+	}
+
+	.stat-value {
+		font-size: 2.5rem;
+		font-weight: 600;
+		color: #007aff;
+		margin-bottom: 0.5rem;
+	}
+
+	.stat-label {
+		font-size: 0.875rem;
+		color: #86868b;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+
+	.quick-actions {
+		margin-top: 3rem;
+	}
+
+	.quick-actions h2 {
+		font-size: 1.5rem;
+		font-weight: 600;
+		color: #1d1d1f;
+		margin-bottom: 1.5rem;
+	}
+
+	.actions-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+		gap: 1.5rem;
+	}
+
+	.action-card {
+		background: #ffffff;
+		border-radius: 12px;
 		padding: 2rem;
-		font-style: italic;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		text-decoration: none;
+		color: #1d1d1f;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		transition: transform 0.2s, box-shadow 0.2s;
+		cursor: pointer;
+	}
+
+	.action-card:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	}
+
+	.action-icon {
+		font-size: 3rem;
+		margin-bottom: 1rem;
+	}
+
+	.action-label {
+		font-size: 1rem;
+		font-weight: 500;
+	}
+
+	@media (max-width: 768px) {
+		h1 {
+			font-size: 2rem;
+		}
+
+		.stats-grid,
+		.actions-grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
 	}
 </style>
