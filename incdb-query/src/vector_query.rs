@@ -3,12 +3,14 @@
 //! SIMILAR, DIST 述語の実装
 
 use incdb_core::model::{IId, WorldGraph};
+#[cfg(feature = "storage")]
 use incdb_storage::index::vector_index::{VectorIndex, VectorIndexError};
 use thiserror::Error;
 
 /// ベクタークエリエラー
 #[derive(Error, Debug)]
 pub enum VectorQueryError {
+    #[cfg(feature = "storage")]
     #[error("Vector index error: {0}")]
     Index(#[from] VectorIndexError),
     #[error("Query error: {0}")]
@@ -30,6 +32,7 @@ impl VectorQuery {
     }
 
     /// クエリを実行
+    #[cfg(feature = "storage")]
     pub fn execute<I: VectorIndex>(
         &self,
         index: &I,
@@ -72,6 +75,7 @@ impl HybridQuery {
     }
 
     /// クエリを実行
+    #[cfg(feature = "storage")]
     pub fn execute<I: VectorIndex>(
         &self,
         index: &I,
@@ -110,6 +114,7 @@ impl HybridQuery {
 }
 
 #[cfg(test)]
+#[cfg(feature = "storage")]
 mod tests {
     use super::*;
     use incdb_storage::index::vector_index::SimpleVectorIndex;

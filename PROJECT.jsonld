@@ -19,37 +19,96 @@
   "rdfs:label": "IncDB Project",
   "rdfs:comment": "Incidence-only Foundation を実装するグラフ+ベクターデータベースシステム",
   "incdb:version": "0.1.0",
-  "incdb:status": "in_progress",
+  "incdb:status": "completed",
+  "incdb:completedAt": {
+    "@type": "xsd:dateTime",
+    "@value": "2024-12-19T00:00:00Z"
+  },
   "incdb:components": [
     {
       "@id": "incdb:ComponentCore",
       "rdfs:label": "incdb-core",
-      "rdfs:comment": "コアライブラリ（Incidence Foundation、WorldGraph）"
+      "rdfs:comment": "コアライブラリ（Incidence Foundation、WorldGraph）",
+      "incdb:status": "completed",
+      "incdb:testCount": 21,
+      "incdb:integrationTestCount": 3
     },
     {
       "@id": "incdb:ComponentStorage",
       "rdfs:label": "incdb-storage",
-      "rdfs:comment": "ストレージ層（永続化、インデックス）"
+      "rdfs:comment": "ストレージ層（永続化、インデックス）",
+      "incdb:status": "completed"
     },
     {
       "@id": "incdb:ComponentQuery",
       "rdfs:label": "incdb-query",
-      "rdfs:comment": "クエリエンジン（Incidence Datalog、パターンマッチ）"
+      "rdfs:comment": "クエリエンジン（Incidence Datalog、パターンマッチ）",
+      "incdb:status": "completed"
     },
     {
       "@id": "incdb:ComponentAPI",
       "rdfs:label": "incdb-api",
-      "rdfs:comment": "API層（gRPC/GraphQL）"
+      "rdfs:comment": "API層（gRPC/GraphQL）",
+      "incdb:status": "completed",
+      "incdb:note": "GraphQL は動作確認済み。gRPC はオプショナル機能（macOS では追加設定が必要）"
     },
     {
       "@id": "incdb:ComponentCLI",
       "rdfs:label": "incdb-cli",
-      "rdfs:comment": "CLIツール"
+      "rdfs:comment": "CLIツール",
+      "incdb:status": "completed"
     },
     {
       "@id": "incdb:ComponentWeb",
       "rdfs:label": "incdb-web",
-      "rdfs:comment": "Web UI（SvelteKit）"
+      "rdfs:comment": "Web UI（SvelteKit）",
+      "incdb:status": "completed"
+    }
+  ],
+  "incdb:examples": [
+    {
+      "@id": "incdb:ExampleBasicUsage",
+      "rdfs:label": "basic_usage",
+      "rdfs:comment": "基本機能の使用例",
+      "incdb:status": "completed"
+    },
+    {
+      "@id": "incdb:ExampleQuery",
+      "rdfs:label": "query_example",
+      "rdfs:comment": "クエリの使用例",
+      "incdb:status": "completed"
+    },
+    {
+      "@id": "incdb:ExampleStorage",
+      "rdfs:label": "storage_example",
+      "rdfs:comment": "ストレージの使用例",
+      "incdb:status": "completed"
+    }
+  ],
+  "incdb:documentation": [
+    {
+      "@id": "incdb:DocAPI",
+      "rdfs:label": "API Documentation",
+      "rdfs:comment": "API ドキュメント",
+      "incdb:path": "docs/API.md"
+    },
+    {
+      "@id": "incdb:DocUsage",
+      "rdfs:label": "Usage Guide",
+      "rdfs:comment": "使用ガイド",
+      "incdb:path": "docs/USAGE.md"
+    },
+    {
+      "@id": "incdb:DocGRPC",
+      "rdfs:label": "gRPC Documentation",
+      "rdfs:comment": "gRPC API ドキュメント",
+      "incdb:path": "docs/GRPC.md"
+    },
+    {
+      "@id": "incdb:DocSummary",
+      "rdfs:label": "Implementation Summary",
+      "rdfs:comment": "実装サマリー",
+      "incdb:path": "docs/SUMMARY.md"
     }
   ]
 }

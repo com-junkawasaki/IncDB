@@ -26,16 +26,38 @@ IncDB は、Incidence を唯一の基本実体とし、Type・Set・Category を
 
 ```bash
 # ビルド
-cargo build
+cargo build --workspace
 
 # テスト
-cargo test
+cargo test --workspace
+
+# サンプルコードの実行
+cargo run --example basic_usage -p incdb-core
+
+# ドキュメント生成
+cargo doc --workspace --open
 
 # Web UI 開発
 cd incdb-web
 npm install
 npm run dev
 ```
+
+## 機能
+
+- ✅ **Incidence-only Foundation**: すべての構造を Incidence のパターンとして定義
+- ✅ **Coinduction サポート**: 無限構造を安全に扱う
+- ✅ **Bisimulation Equality**: 構造的等価性の判定
+- ✅ **ベクトル検索**: 埋め込みベースの類似度検索
+- ✅ **Datalog クエリ**: 宣言的クエリ言語
+- ✅ **GraphQL API**: async-graphql による GraphQL サーバー
+- ⚠️ **gRPC API**: オプショナル機能（macOS では追加設定が必要）
+
+## ドキュメント
+
+- [API Documentation](docs/API.md)
+- [Usage Guide](docs/USAGE.md)
+- [gRPC API](docs/GRPC.md)
 
 ## ライセンス
 

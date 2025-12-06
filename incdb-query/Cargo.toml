@@ -7,9 +7,13 @@ license.workspace = true
 
 [dependencies]
 incdb-core = { path = "../incdb-core" }
-incdb-storage = { path = "../incdb-storage" }
+incdb-storage = { path = "../incdb-storage", optional = true }
 thiserror = { workspace = true }
 serde = { workspace = true }
+
+[features]
+default = []
+storage = ["incdb-storage"]
 
 [[example]]
 name = "query_example"
