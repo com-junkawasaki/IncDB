@@ -1,11 +1,9 @@
 [package]
 name = "incdb-cli"
-version = "0.1.0"
-edition = "2021"
-authors = ["IncDB Contributors"]
-license = "Apache-2.0"
-
-[workspace]
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
 
 [[bin]]
 name = "incdb"

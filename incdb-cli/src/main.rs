@@ -1,7 +1,7 @@
 //! IncDB CLI Tool
 
 use clap::{Parser, Subcommand};
-use incdb_core::model::{IId, Incidence, Level, RoleId, Value, WorldGraph, EventSourcedGraphBuilder};
+use incdb_core::model::{IId, Incidence, Level, RoleId, Value, WorldGraph, EventSourcedGraphBuilder, GraphWrapper};
 use incdb_core::ir::InternalJsonConverter;
 use incdb_query::datalog::{DatalogProgram, Predicate};
 use std::sync::{Arc, Mutex};
@@ -110,13 +110,14 @@ enum Commands {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
     
-    // 環境変数でEventSourcingモードを切り替え
+    // 環境変数でEventSourcingモードを切り替え（デフォルトはEventSourcingモード）
     let use_event_sourcing = env::var("USE_EVENT_SOURCING")
-        .unwrap_or_else(|_| "false".to_string())
+        .unwrap_or_else(|_| "true".to_string())
         .parse::<bool>()
-        .unwrap_or(false);
+        .unwrap_or(true);
     
-    let graph = if use_event_sourcing {
+    // EventSourcedGraphまたはWorldGraphを作成（GraphWrapperを使用）
+    let graph_wrapper = if use_event_sourcing {
         println!("Using EventSourcedGraph (event sourcing mode)");
         let storage_path = env::var("INCDB_STORAGE_PATH")
             .unwrap_or_else(|_| "./data".to_string());
@@ -127,17 +128,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .build()
             .await?;
         
-        // 現在はWorldGraphを使用（EventSourcedGraph統合は進行中）
-        Arc::new(Mutex::new(WorldGraph::new()))
+        GraphWrapper::EventSourcedGraph(Arc::new(tokio::sync::Mutex::new(es_graph)))
     } else {
-        Arc::new(Mutex::new(WorldGraph::new()))
+        println!("Using WorldGraph (in-memory mode)");
+        GraphWrapper::WorldGraph(Arc::new(Mutex::new(WorldGraph::new())))
     };
 
     match cli.command {
         Commands::Add { level, type_id, value } => {
-            let mut g = graph.lock().unwrap();
-            let id = g.new_id();
-            let mut inc = Incidence::new(id, Level(level));
+            let mut inc = Incidence::new(IId(0), Level(level));
 
             if let Some(type_id_str) = type_id {
                 let type_id = IId(type_id_str.parse()?);
@@ -148,13 +147,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 inc = inc.with_val(Value::string(value_str));
             }
 
-            g.add_incidence(inc);
+            let id = graph_wrapper.add_incidence(inc);
             println!("Added incidence: {}", id.0);
         }
         Commands::Get { id } => {
-            let g = graph.lock().unwrap();
             let id = IId(id.parse()?);
-            if let Some(inc) = g.get(id) {
+            if let Some(inc) = graph_wrapper.get(id) {
                 println!("Incidence: {:?}", inc);
             } else {
                 println!("Incidence not found: {}", id.0);
@@ -223,7 +221,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             vector_dim,
             args_per_incidence,
         } => {
-            let mut g = graph.lock().unwrap();
             let start = Instant::now();
             let mut total_written = 0;
 
@@ -239,8 +236,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let batch_end = (batch_start + batch_size).min(data_size);
                 
                 for i in batch_start..batch_end {
-                    let id = g.new_id();
-                    let mut incidence = Incidence::new(id, Level::zero());
+                    let mut incidence = Incidence::new(IId(0), Level::zero());
 
                     // ベクトルを追加
                     if vector_dim > 0 {
@@ -259,7 +255,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
                     }
 
-                    g.add_incidence(incidence);
+                    // GraphWrapperを使用して追加
+                    graph_wrapper.add_incidence(incidence);
                     total_written += 1;
                 }
                 
@@ -283,22 +280,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("  Latency: {:.4}ms", latency_ms);
         }
         Commands::BenchmarkRead { query_count } => {
-            let mut g = graph.lock().unwrap();
-            let graph_size = g.len();
+            let graph_size = graph_wrapper.len();
 
             // グラフが空の場合は、テストデータを生成
             if graph_size == 0 {
                 println!("Graph is empty. Generating test data for read benchmark...");
                 let test_size = query_count.max(1000);
                 for i in 0..test_size {
-                    let id = g.new_id();
-                    let mut incidence = Incidence::new(id, Level::zero());
+                    let mut incidence = Incidence::new(IId(0), Level::zero());
                     incidence = incidence.with_val(Value::string(format!("Test_{}", i)));
-                    g.add_incidence(incidence);
+                    graph_wrapper.add_incidence(incidence);
                 }
                 println!("Generated {} test incidences", test_size);
             }
-            let graph_size = g.len(); // 再取得
+            let graph_size = graph_wrapper.len(); // 再取得
 
             let start = Instant::now();
             let mut total_read = 0;
@@ -313,7 +308,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             use std::hash::{Hash, Hasher};
             
             // 利用可能なIDを収集
-            let available_ids: Vec<IId> = g.iter().map(|inc| inc.id).collect();
+            let available_ids: Vec<IId> = graph_wrapper.iter().iter().map(|inc| inc.id).collect();
             let graph_size = available_ids.len();
             
             if graph_size == 0 {
@@ -328,7 +323,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let hash = hasher.finish();
                 let idx = (hash % graph_size as u64) as usize;
                 if let Some(&id) = available_ids.get(idx) {
-                    if g.get(id).is_some() {
+                    if graph_wrapper.get(id).is_some() {
                         total_read += 1;
                     }
                 }
@@ -357,16 +352,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             depth,
             avg_edges,
         } => {
-            let mut g = graph.lock().unwrap();
-            let graph_size = g.len();
+            let graph_size = graph_wrapper.len();
 
             // グラフが空の場合は、テストデータを生成
             if graph_size == 0 {
                 println!("Graph is empty. Generating test data for multi-hop benchmark...");
                 let test_size = start_nodes * avg_edges * depth;
                 for i in 0..test_size {
-                    let id = g.new_id();
-                    let mut incidence = Incidence::new(id, Level::zero());
+                    let mut incidence = Incidence::new(IId(0), Level::zero());
                     
                     // 前のノードへのリンクを作成
                     if i > 0 {
@@ -377,11 +370,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
                     }
                     
-                    g.add_incidence(incidence);
+                    graph_wrapper.add_incidence(incidence);
                 }
                 println!("Generated {} test incidences", test_size);
             }
-            let g = g; // 再借用
 
             let start = Instant::now();
             let mut total_hops = 0;
@@ -394,7 +386,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!();
 
             // 開始ノードを選択
-            let start_ids: Vec<IId> = g.iter()
+            let all_incidences = graph_wrapper.iter();
+            let start_ids: Vec<IId> = all_incidences
+                .iter()
                 .take(start_nodes)
                 .map(|inc| inc.id)
                 .collect();
@@ -409,7 +403,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let mut next_level = Vec::new();
 
                     for node_id in &current_level {
-                        if let Some(inc) = g.get(*node_id) {
+                        if let Some(inc) = graph_wrapper.get(*node_id) {
                             // args から次のノードを取得
                             let edges: Vec<IId> = inc.args.iter()
                                 .take(avg_edges)
@@ -417,7 +411,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .collect();
 
                             for edge_id in edges {
-                                if !visited.contains(&edge_id) && g.get(edge_id).is_some() {
+                                if !visited.contains(&edge_id) && graph_wrapper.get(edge_id).is_some() {
                                     visited.insert(edge_id);
                                     next_level.push(edge_id);
                                     total_hops += 1;
@@ -469,10 +463,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             depth,
             k_per_hop,
         } => {
-            let mut g = graph.lock().unwrap();
-            
             // ベクトルを持つ Incidence を収集
-            let vector_incidences: Vec<(IId, Vec<f32>)> = g.iter()
+            let all_incidences = graph_wrapper.iter();
+            let vector_incidences: Vec<(IId, Vec<f32>)> = all_incidences
+                .iter()
                 .filter_map(|inc| {
                     inc.embedding.as_ref().map(|emb| (inc.id, emb.clone()))
                 })
@@ -483,8 +477,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             if vector_incidences.is_empty() {
                 println!("No vectors found. Generating test data with vectors for vector-hop benchmark...");
                 for i in 0..data_size {
-                    let id = g.new_id();
-                    let mut incidence = Incidence::new(id, Level::zero());
+                    let mut incidence = Incidence::new(IId(0), Level::zero());
                     
                     // ベクトルを生成
                     let embedding: Vec<f32> = (0..vector_dim)
@@ -492,14 +485,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .collect();
                     incidence = incidence.with_embedding(embedding);
                     
-                    g.add_incidence(incidence);
+                    graph_wrapper.add_incidence(incidence);
                 }
                 println!("Generated {} test incidences with vectors", data_size);
             }
-            let g = g; // 再借用
             
             // ベクトルを持つ Incidence を再収集
-            let vector_incidences: Vec<(IId, Vec<f32>)> = g.iter()
+            let all_incidences = graph_wrapper.iter();
+            let vector_incidences: Vec<(IId, Vec<f32>)> = all_incidences
+                .iter()
                 .filter_map(|inc| {
                     inc.embedding.as_ref().map(|emb| (inc.id, emb.clone()))
                 })

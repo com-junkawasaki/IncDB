@@ -9,12 +9,12 @@ use std::env;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 環境変数から設定を取得
+    // 環境変数から設定を取得（デフォルトはEventSourcingモード）
     let addr = env::var("BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:8080".to_string());
     let use_event_sourcing = env::var("USE_EVENT_SOURCING")
-        .unwrap_or_else(|_| "false".to_string())
+        .unwrap_or_else(|_| "true".to_string())
         .parse::<bool>()
-        .unwrap_or(false);
+        .unwrap_or(true);
     
     if use_event_sourcing {
         println!("Using EventSourcedGraph (event sourcing mode)");
